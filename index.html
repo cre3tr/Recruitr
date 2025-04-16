@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recruitr</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+    const { createRoot } = ReactDOM;
+
+    const App = () => {
+      const [view, setView] = useState('candidate');
+      const [chatMessages, setChatMessages] = useState([
+        { sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }
+      ]);
+      const [userInput, setUserInput] = useState('');
+      const [resumeFile, setResumeFile] = useState(null);
+      const [candidates, setCandidates] = useState([]);
+
+      const handleSendMessage = async () => {
+        if (!userInput.trim()) return;
+        setChatMessages([...chatMessages, { sender: 'User', text: userInput }]);
+        setTimeout(() => {
+          setChatMessages((prev) => [
+            ...prev,
+            { sender: 'AI', text: 'Thanks! Can you describe your experience with Python?' }
+          ]);
+        }, 1000);
+        setUserInput('');
+      };
+
+      const handleResumeUpload = async (e) => {
+        const file = e.target.files[0];
+        setResumeFile(file);
+        setChatMessages((prev) => [
+          ...prev,
+          { sender: 'AI', text: 'Resume uploaded! Extracted skills: Python, JavaScript.' }
+        ]);
+        setCandidates((prev) => [
+          ...prev,
+          { id: prev.length + 1, name: 'Candidate ' + (prev.length + 1), score: 85 }
+        ]);
+      };
+
+      const CandidateView = () => (
+        <div className="max-w-2xl mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">Recruitr Candidate Portal</h1>
+          <div className="border p-4 h-96 overflow-y-auto mb-4">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`mb-2 ${msg.sender === 'AI' ? 'text-blue-600' : 'text-green-600'}`}>
+                <strong>{msg.sender}:</strong> {msg.text}
+              </div>
+            ))}
+          </div>
+          <input
+            type="file"
+            accept=".pdf,.docx"
+            className="mb-4"
+            onChange={handleResumeUpload}
+          />
+          <div className="flex">
+            <input
+              type="text"
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              className="flex-1 border p-2 mr-2"
+              placeholder="Type your response..."
+            />
+            <button
+              onClick={handleSendMessage}
+              className="bg-blue-500 text-white p-2 rounded"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      );
+
+      const RecruiterView = () => (
+        <div className="max-w-4xl mx-auto p-4">
+          <h1 className="text-2xl font-bold mb-4">Recruitr Recruiter Dashboard</h1>
+          <table className="w-full border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2">Candidate ID</th>
+                <th className="p-2">Name</th>
+                <th className="p-2">Match Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {candidates.map((candidate) => (
+                <tr key={candidate.id} className="border-t">
+                  <td className="p-2">{candidate.id}</td>
+                  <td className="p-2">{candidate.name}</td>
+                  <td className="p-2">{candidate.score}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      return (
+        <div>
+          <div className="flex justify-center p-4">
+            <button
+              onClick={() => setView('candidate')}
+              className={`mr-2 p-2 ${view === 'candidate' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            >
+              Candidate View
+            </button>
+            <button
+              onClick={() => setView('recruiter')}
+              className={`p-2 ${view === 'recruiter' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            >
+              Recruiter View
+            </button>
+          </div>
+          {view === 'candidate' ? <CandidateView /> : <RecruiterView />}
+        </div>
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
