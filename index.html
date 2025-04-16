@@ -5,131 +5,241 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recruitr</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+  <!-- Note: The Tailwind CDN may cause a console warning: "Warning: TT: undefined function: 21".
+       This is harmless and doesn't affect functionality. We can address it in a future iteration by using a local Tailwind build. -->
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState } = React;
-    const { createRoot } = ReactDOM;
+  <div id="app">
+    <div class="flex justify-center p-4">
+      <button id="candidate-view-btn" class="mr-2 p-2 bg-blue-500 text-white">Candidate View</button>
+      <button id="recruiter-view-btn" class="p-2 bg-gray-200">Recruiter View</button>
+    </div>
+    <div id="candidate-view" class="max-w-2xl mx-auto p-4">
+      <h1 class="text-2xl font-bold mb-4">Recruitr Candidate Portal</h1>
+      <div class="flex justify-end mb-2">
+        <button id="clear-chat-btn" class="p-2 bg-red-500 text-white rounded">Clear Chat</button>
+      </div>
+      <div id="chat-box" class="border p-4 h-96 overflow-y-auto mb-4">
+        <div class="mb-2 text-blue-600"><strong>AI:</strong> Welcome to Recruitr! Please upload your resume to start.</div>
+      </div>
+      <input id="resume-input" type="file" accept=".pdf,.docx" class="mb-4">
+      <div class="flex">
+        <input id="chat-input" type="text" class="flex-1 border p-2 mr-2" placeholder="Type your response...">
+        <button id="send-btn" class="bg-blue-500 text-white p-2 rounded">Send</button>
+      </div>
+    </div>
+    <div id="recruiter-view" class="max-w-4xl mx-auto p-4 hidden">
+      <h1 class="text-2xl font-bold mb-4">Recruitr Recruiter Dashboard</h1>
+      <table class="w-full border">
+        <thead>
+          <tr class="bg-gray-100">
+            <th class="p-2">Candidate ID</th>
+            <th class="p-2">Name</th>
+            <th class="p-2">Match Score</th>
+          </tr>
+        </thead>
+        <tbody id="candidate-table-body"></tbody>
+      </table>
+    </div>
+  </div>
 
-    const App = () => {
-      const [view, setView] = useState('candidate');
-      const [chatMessages, setChatMessages] = useState([
-        { sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }
-      ]);
-      const [userInput, setUserInput] = useState('');
-      const [resumeFile, setResumeFile] = useState(null);
-      const [candidates, setCandidates] = useState([]);
+  <script>
+    // Load state from localStorage or initialize defaults
+    let view = localStorage.getItem('view') || 'candidate';
+    let candidateId = localStorage.getItem('candidateId') || null;
+    let candidates = JSON.parse(localStorage.getItem('candidates')) || [];
+    let chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [
+      { sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }
+    ];
 
-      const handleSendMessage = async () => {
-        if (!userInput.trim()) return;
-        setChatMessages([...chatMessages, { sender: 'User', text: userInput }]);
-        setTimeout(() => {
-          setChatMessages((prev) => [
-            ...prev,
-            { sender: 'AI', text: 'Thanks! Can you describe your experience with Python?' }
-          ]);
-        }, 1000);
-        setUserInput('');
-      };
+    // DOM Elements
+    const candidateViewBtn = document.getElementById('candidate-view-btn');
+    const recruiterViewBtn = document.getElementById('recruiter-view-btn');
+    const candidateView = document.getElementById('candidate-view');
+    const recruiterView = document.getElementById('recruiter-view');
+    const chatBox = document.getElementById('chat-box');
+    const resumeInput = document.getElementById('resume-input');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    const candidateTableBody = document.getElementById('candidate-table-body');
 
-      const handleResumeUpload = async (e) => {
-        const file = e.target.files[0];
-        setResumeFile(file);
-        setChatMessages((prev) => [
-          ...prev,
-          { sender: 'AI', text: 'Resume uploaded! Extracted skills: Python, JavaScript.' }
-        ]);
-        setCandidates((prev) => [
-          ...prev,
-          { id: prev.length + 1, name: 'Candidate ' + (prev.length + 1), score: 85 }
-        ]);
-      };
+    // Helper to add chat message
+    function addChatMessage(sender, text) {
+      console.log('Adding chat message:', { sender, text });
+      chatMessages.push({ sender, text });
+      localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+      renderChatMessages();
+    }
 
-      const CandidateView = () => (
-        <div className="max-w-2xl mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">Recruitr Candidate Portal</h1>
-          <div className="border p-4 h-96 overflow-y-auto mb-4">
-            {chatMessages.map((msg, idx) => (
-              <div key={idx} className={`mb-2 ${msg.sender === 'AI' ? 'text-blue-600' : 'text-green-600'}`}>
-                <strong>{msg.sender}:</strong> {msg.text}
-              </div>
-            ))}
-          </div>
-          <input
-            type="file"
-            accept=".pdf,.docx"
-            className="mb-4"
-            onChange={handleResumeUpload}
-          />
-          <div className="flex">
-            <input
-              type="text"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              className="flex-1 border p-2 mr-2"
-              placeholder="Type your response..."
-            />
-            <button
-              onClick={handleSendMessage}
-              className="bg-blue-500 text-white p-2 rounded"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      );
+    // Render chat messages
+    function renderChatMessages() {
+      console.log('Rendering chat messages:', chatMessages);
+      chatBox.innerHTML = '';
+      chatMessages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-2 ${msg.sender === 'AI' ? 'text-blue-600' : 'text-green-600'}`;
+        messageDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+        chatBox.appendChild(messageDiv);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-      const RecruiterView = () => (
-        <div className="max-w-4xl mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">Recruitr Recruiter Dashboard</h1>
-          <table className="w-full border">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2">Candidate ID</th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Match Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((candidate) => (
-                <tr key={candidate.id} className="border-t">
-                  <td className="p-2">{candidate.id}</td>
-                  <td className="p-2">{candidate.name}</td>
-                  <td className="p-2">{candidate.score}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
+    // Clear chat
+    clearChatBtn.addEventListener('click', () => {
+      chatMessages = [{ sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
+      localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+      renderChatMessages();
+    });
 
-      return (
-        <div>
-          <div className="flex justify-center p-4">
-            <button
-              onClick={() => setView('candidate')}
-              className={`mr-2 p-2 ${view === 'candidate' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Candidate View
-            </button>
-            <button
-              onClick={() => setView('recruiter')}
-              className={`p-2 ${view === 'recruiter' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Recruiter View
-            </button>
-          </div>
-          {view === 'candidate' ? <CandidateView /> : <RecruiterView />}
-        </div>
-      );
-    };
+    // Switch views
+    candidateViewBtn.addEventListener('click', () => {
+      view = 'candidate';
+      localStorage.setItem('view', view);
+      candidateView.classList.remove('hidden');
+      recruiterView.classList.add('hidden');
+      candidateViewBtn.classList.add('bg-blue-500', 'text-white');
+      candidateViewBtn.classList.remove('bg-gray-200');
+      recruiterViewBtn.classList.add('bg-gray-200');
+      recruiterViewBtn.classList.remove('bg-blue-500', 'text-white');
+      renderChatMessages();
+    });
 
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
+    recruiterViewBtn.addEventListener('click', () => {
+      view = 'recruiter';
+      localStorage.setItem('view', view);
+      candidateView.classList.add('hidden');
+      recruiterView.classList.remove('hidden');
+      recruiterViewBtn.classList.add('bg-blue-500', 'text-white');
+      recruiterViewBtn.classList.remove('bg-gray-200');
+      candidateViewBtn.classList.add('bg-gray-200');
+      candidateViewBtn.classList.remove('bg-blue-500', 'text-white');
+      updateRecruiterTable();
+    });
+
+    // Handle resume upload
+    resumeInput.addEventListener('change', async (e) => {
+      e.preventDefault();
+      const file = e.target.files[0];
+      if (!file) {
+        addChatMessage('AI', 'No file selected.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      try {
+        console.log('Uploading resume:', file.name);
+        const response = await fetch('http://localhost:3000/api/upload-resume', {
+          method: 'POST',
+          body: formData
+        });
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        if (data.message === 'Resume uploaded successfully') {
+          candidateId = data.candidateId;
+          localStorage.setItem('candidateId', candidateId);
+          
+          // Display extracted data
+          addChatMessage('AI', `Resume uploaded! Extracted skills: ${data.parsedData.skills.join(', ') || 'None'}.`);
+          if (data.parsedData.skills.length === 0 && data.parsedData.rawText) {
+            // Fallback: Show a snippet of the raw text if no skills are extracted
+            const rawTextSnippet = data.parsedData.rawText.slice(0, 200) + (data.parsedData.rawText.length > 200 ? '...' : '');
+            addChatMessage('AI', `No skills extracted. Here’s a snippet of the raw text: "${rawTextSnippet}"`);
+          }
+          addChatMessage('AI', data.parsedData.skills.length > 0
+            ? `Can you describe your experience with ${data.parsedData.skills[0]}?`
+            : 'Can you tell me about your recent work experience?');
+          
+          candidates.push({
+            id: candidates.length + 1,
+            name: `Candidate ${candidates.length + 1}`,
+            score: data.parsedData.skills.length * 20
+          });
+          localStorage.setItem('candidates', JSON.stringify(candidates));
+          updateRecruiterTable();
+        } else {
+          addChatMessage('AI', `Error: ${data.error || 'Failed to upload resume.'}`);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        addChatMessage('AI', `Error: Could not connect to server. Details: ${error.message}`);
+      }
+    });
+
+    // Handle chat message
+    sendBtn.addEventListener('click', async () => {
+      const message = chatInput.value.trim();
+      if (!message || !candidateId) {
+        if (!candidateId) addChatMessage('AI', 'Please upload a resume first.');
+        return;
+      }
+
+      addChatMessage('User', message);
+
+      try {
+        console.log('Sending chat message:', message);
+        const response = await fetch('http://localhost:3000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidateId, message })
+        });
+        console.log('Chat response status:', response.status);
+        const data = await response.json();
+        console.log('Chat response data:', data);
+
+        if (response.ok) {
+          addChatMessage('AI', data.response);
+        } else {
+          addChatMessage('AI', `Error: ${data.error || 'Failed to process message.'}`);
+        }
+      } catch (error) {
+        console.error('Chat fetch error:', error);
+        addChatMessage('AI', `Error: Could not connect to server. Details: ${error.message}`);
+      }
+      chatInput.value = '';
+      chatInput.focus();
+    });
+
+    // Update recruiter table
+    function updateRecruiterTable() {
+      console.log('Updating recruiter table:', candidates);
+      candidateTableBody.innerHTML = '';
+      candidates.forEach(candidate => {
+        const row = document.createElement('tr');
+        row.className = 'border-t';
+        row.innerHTML = `
+          <td class="p-2">${candidate.id}</td>
+          <td class="p-2">${candidate.name}</td>
+          <td class="p-2">${candidate.score}%</td>
+        `;
+        candidateTableBody.appendChild(row);
+      });
+    }
+
+    // Prevent page reload on Enter key in chat input
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+
+    // Initial render based on stored view
+    if (view === 'candidate') {
+      candidateViewBtn.click();
+    } else {
+      recruiterViewBtn.click();
+    }
+
+    // Log to confirm script execution
+    console.log('Recruitr app loaded');
   </script>
 </body>
 </html>
