@@ -15,8 +15,21 @@ const app = express();
 const port = process.env.PORT || 3001; // Use Render's assigned port
 
 // MongoDB setup
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/recruitr';
-const SESSION_SECRET = process.env.SESSION_SECRET || 'changeme';
+// [ACTION REQUIRED]: Set MONGODB_URI in Render's environment variables (e.g., mongodb+srv://<username>:<password>@<cluster>.mongodb.net/recruitr)
+// Current value contains sensitive credentials and should not be hardcoded
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('MONGODB_URI environment variable is required');
+  process.exit(1);
+}
+
+// Session Secret
+// [ACTION REQUIRED]: Set SESSION_SECRET in Render's environment variables (e.g., a 64-character hex string generated via crypto.randomBytes(32).toString('hex'))
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  console.error('SESSION_SECRET environment variable is required');
+  process.exit(1);
+}
 
 let db;
 MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
@@ -30,8 +43,9 @@ MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
   });
 
 // Middleware
+// [ACTION REQUIRED]: Set FRONTEND_URL in Render's environment variables (e.g., https://recruitr-frontend.onrender.com)
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use FRONTEND_URL for Render
+  origin: process.env.FRONTEND_URL || 'https://recruitr.onrender.com',
   credentials: true
 }));
 app.use(express.json());
@@ -50,14 +64,20 @@ app.use((req, res, next) => {
 });
 
 // Replace hardcoded credentials with env vars
-const RECRUITER_USER = process.env.RECRUITER_USER || 'recruiter';
+// [ACTION REQUIRED]: Set RECRUITER_USER in Render's environment variables (e.g., adminrecruitr)
+const RECRUITER_USER = process.env.RECRUITER_USER || 'adminrecruitr';
+// [ACTION REQUIRED]: Set RECRUITER_PASS_HASH in Render's environment variables (bcrypt-hashed password, generate using bcrypt.hash('yourpassword', 10))
 const RECRUITER_PASS_HASH = process.env.RECRUITER_PASS_HASH;
+if (!RECRUITER_PASS_HASH) {
+  console.error('RECRUITER_PASS_HASH environment variable is required in production');
+  process.exit(1);
+}
 
 // Improved login endpoint
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
-  if (username === RECRUITER_USER) {
+  if (username === adminrecruitr) {
     if (process.env.NODE_ENV === 'development' && password === 'password') {
       req.session.user = { username };
       return res.json({ success: true, username });
@@ -72,6 +92,14 @@ app.post('/api/login', async (req, res) => {
   res.status(401).json({ error: 'Invalid credentials' });
 });
 
+// Session verification endpoint (used by index.html)
+app.get('/api/verify-session', (req, res) => {
+  if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
+    return res.json({ success: true, username: req.session.user.username });
+  }
+  res.status(401).json({ error: 'Not authenticated' });
+});
+
 // Auth middleware
 function requireAuth(req, res, next) {
   if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
@@ -80,7 +108,7 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-// Set up file storage
+// Set up file storage (ephemeral on Render, files deleted on redeployment)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
@@ -101,7 +129,8 @@ const upload = multer({
       return cb(new Error('Only PDF and DOCX files are allowed'));
     }
     cb(null, true);
-  }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
 // Expanded skill list for matching
@@ -222,6 +251,15 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
   } catch (error) {
     console.error('Error parsing resume:', error);
     res.status(500).json({ error: 'Failed to parse resume' });
+  } finally {
+    // Clean up uploaded file to save space (optional for MVP, since Render filesystem is ephemeral)
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        console.error('Error deleting uploaded file:', err);
+      }
+    }
   }
 });
 
@@ -330,6 +368,11 @@ app.get('/api/candidates/:id', requireAuth, async (req, res) => {
 
 // Serve static files (optional)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Health check endpoint for Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 // Start server
 app.listen(port, () => {
