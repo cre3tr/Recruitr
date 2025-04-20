@@ -9,14 +9,15 @@ const mammoth = require('mammoth');
 const { MongoClient, ObjectId } = require('mongodb');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const bcrypt = require('bcrypt'); // Added bcrypt
+const bcrypt = require('bcrypt');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3001; // Explicitly set to 3001 to avoid conflict with front-end
+
+// MongoDB setup
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/recruitr';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'changeme';
 
-// MongoDB setup
 let db;
 MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
   .then(client => {
@@ -30,7 +31,7 @@ MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173', // Frontend port; adjust as needed
+  origin: 'http://localhost:3000', // Front-end port
   credentials: true
 }));
 app.use(express.json());
@@ -42,23 +43,26 @@ app.use(session({
   cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
+// Add logging middleware to debug incoming requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} request to ${req.url}`);
+  next();
+});
+
 // Replace hardcoded credentials with env vars
 const RECRUITER_USER = process.env.RECRUITER_USER || 'recruiter';
-const RECRUITER_PASS_HASH = process.env.RECRUITER_PASS_HASH; // Store hashed password in env
+const RECRUITER_PASS_HASH = process.env.RECRUITER_PASS_HASH;
 
 // Improved login endpoint
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
-  // For MVP with stored hash
   if (username === RECRUITER_USER) {
-    // For development without bcrypt setup yet
     if (process.env.NODE_ENV === 'development' && password === 'password') {
       req.session.user = { username };
       return res.json({ success: true, username });
     }
     
-    // For production with proper password hashing
     if (RECRUITER_PASS_HASH && await bcrypt.compare(password, RECRUITER_PASS_HASH)) {
       req.session.user = { username };
       return res.json({ success: true, username });
@@ -113,23 +117,17 @@ const SKILL_LIST = [
 
 // Enhanced name extraction function
 function extractCandidateName(text) {
-  // Look for common name patterns at the top of resumes
   const lines = text.split('\n').slice(0, 10);
   
-  // Try to find a name-like pattern in the first few lines
   for (const line of lines) {
     const trimmedLine = line.trim();
-    // Skip empty lines and very long lines (likely not a name)
     if (!trimmedLine || trimmedLine.length > 50) continue;
     
-    // Skip lines with common resume section headers
     const skipWords = ['resume', 'cv', 'curriculum', 'vitae', 'profile', 'contact'];
     if (skipWords.some(word => trimmedLine.toLowerCase().includes(word))) continue;
     
-    // A name is likely 2-3 words without special characters
     const words = trimmedLine.split(' ').filter(w => w.length > 1);
     if (words.length >= 2 && words.length <= 4) {
-      // Check if it looks like a name (first letter uppercase, rest lowercase)
       const namePattern = words.every(w => 
         /^[A-Z][a-z]+$/.test(w) || /^[A-Z][a-z]+[-'][A-Z][a-z]+$/.test(w)
       );
@@ -159,11 +157,9 @@ async function parseResume(filePath, fileType) {
 
   console.log('Extracted text:', text);
 
-  // Basic parsing logic
   const skills = SKILL_LIST.filter(skill => text.toLowerCase().includes(skill));
   console.log('Skills matched:', skills);
 
-  // Fallback: Extract skills from common sections (e.g., "Skills:", "Technical Skills:")
   const skillsSectionMatch = text.match(/(?:skills|technical skills|key skills)[:\n](.*?)(?=\n\n|\n[A-Z])/is);
   let additionalSkills = [];
   if (skillsSectionMatch) {
@@ -174,18 +170,14 @@ async function parseResume(filePath, fileType) {
     console.log('No skills section found');
   }
 
-  // Combine skills and remove duplicates
   const allSkills = [...new Set([...skills, ...additionalSkills])];
 
-  // More flexible regex for experience
   const experience = text.match(/(engineer|developer|manager|analyst|consultant|intern|associate|lead|senior|junior|specialist|support|administrator)\s*[\w\s]*(?:\d{4}\s*-\s*\d{4}|\d{4}\s*-\s*present|\d{4})/gi) || [];
   console.log('Experience matched:', experience);
 
-  // More flexible regex for education
   const education = text.match(/(bachelor|bs|ms|phd|master|mba|diploma|certificate|degree)\s*(?:in|of)?\s*[\w\s]*(?:university|college|institute|school|academy)?/gi) || [];
   console.log('Education matched:', education);
 
-  // Extract candidate name
   const candidateName = extractCandidateName(text);
   console.log('Extracted candidate name:', candidateName);
 
@@ -210,7 +202,6 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
     const fileType = path.extname(req.file.filename).toLowerCase();
     const parsedData = await parseResume(req.file.path, fileType);
 
-    // Store parsed data in MongoDB
     const candidate = {
       fileName: req.file.filename,
       parsedData,
@@ -247,14 +238,11 @@ app.post('/api/chat', async (req, res) => {
       return res.status(404).json({ error: 'Candidate data not found' });
     }
     
-    // Get chat history for context
     const chatHistory = candidate.chatHistory || [];
     const skills = candidate.parsedData.skills || [];
     
-    // Generate more context-aware responses
     let responseText;
     
-    // Check message content for specific patterns
     if (message.toLowerCase().includes('thank you') || message.toLowerCase().includes('thanks')) {
       responseText = "You're welcome! Do you have any questions about the next steps in our process?";
     }
@@ -264,22 +252,17 @@ app.post('/api/chat', async (req, res) => {
     else if (message.toLowerCase().includes('when') && message.toLowerCase().includes('hear')) {
       responseText = "We typically review applications within 5-7 business days. I'll make a note to prioritize your application.";
     }
-    // If discussing experience with a skill we've identified
     else if (skills.some(skill => message.toLowerCase().includes(skill.toLowerCase()))) {
       const mentionedSkill = skills.find(skill => message.toLowerCase().includes(skill.toLowerCase()));
       responseText = `That's great experience with ${mentionedSkill}. Can you describe a specific project where you applied this skill?`;
     }
-    // Detect if candidate is asking about the position
     else if (message.toLowerCase().includes('position') || message.toLowerCase().includes('job') || message.toLowerCase().includes('role')) {
       responseText = "This position involves working with our core technology team. What specific aspects of the role are you most interested in?";
     }
-    // Detect if this is a short answer that needs follow-up
     else if (message.split(' ').length < 10) {
       responseText = "Could you elaborate a bit more? I'd love to understand your background in more detail.";
     }
-    // Default response based on skills
     else if (skills.length > 0) {
-      // Rotate through skills we haven't discussed yet
       const discussedSkills = new Set();
       chatHistory.forEach(msg => {
         if (msg.sender === 'AI') {
@@ -301,7 +284,6 @@ app.post('/api/chat', async (req, res) => {
       responseText = "Thanks for your response. What are you looking for in your next role?";
     }
     
-    // Save chat message and response to candidate's chatHistory
     await db.collection('candidates').updateOne(
       { _id: new ObjectId(candidateId) },
       { 

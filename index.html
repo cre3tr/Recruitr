@@ -12,7 +12,7 @@
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
       <div class="bg-white p-6 rounded-lg shadow-lg w-96">
         <h2 class="text-xl font-bold mb-4">Recruiter Login</h2>
-        <input id="username-input" type="text" placeholder="Username" class="w-full border p-2 mb-3">
+        <input id="username-input" type="text" placeholder="Username" class="w-full border p-2 WAV mb-3">
         <input id="password-input" type="password" placeholder="Password" class="w-full border p-2 mb-4">
         <div class="flex justify-between">
           <button id="login-cancel-btn" class="bg-gray-300 p-2 rounded">Cancel</button>
@@ -224,7 +224,6 @@
       els.profilePreview.classList.remove('hidden');
       els.profileContent.innerHTML = '';
 
-      // Name section
       const nameDiv = document.createElement('div');
       nameDiv.innerHTML = `
         <h3 class="font-semibold">Name</h3>
@@ -232,7 +231,6 @@
       `;
       els.profileContent.appendChild(nameDiv);
 
-      // Skills section
       const skillsDiv = document.createElement('div');
       skillsDiv.innerHTML = `
         <h3 class="font-semibold">Skills</h3>
@@ -244,7 +242,6 @@
       `;
       els.profileContent.appendChild(skillsDiv);
 
-      // Experience preview
       if (profileData.experience && profileData.experience.length > 0) {
         const expDiv = document.createElement('div');
         expDiv.innerHTML = `
@@ -257,7 +254,6 @@
         els.profileContent.appendChild(expDiv);
       }
 
-      // Education preview
       if (profileData.education && profileData.education.length > 0) {
         const eduDiv = document.createElement('div');
         eduDiv.innerHTML = `
@@ -327,7 +323,7 @@
 
       showLoading();
       try {
-        const response = await fetch('http://localhost:3000/api/login', {
+        const response = await fetch('http://localhost:3001/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -352,7 +348,7 @@
       }
     });
 
-    // Handle resume upload with enhanced feedback
+    // Handle resume upload with enhanced feedback and detailed error logging
     els.resumeInput.addEventListener('change', async (e) => {
       e.preventDefault();
       const file = e.target.files[0];
@@ -361,13 +357,11 @@
         return;
       }
 
-      // File size validation (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         els.uploadStatus.textContent = 'File too large. Maximum size is 5MB.';
         return;
       }
 
-      // File type validation
       const fileExt = file.name.split('.').pop().toLowerCase();
       if (fileExt !== 'pdf' && fileExt !== 'docx') {
         els.uploadStatus.textContent = 'Only PDF and DOCX files are allowed.';
@@ -381,13 +375,17 @@
       formData.append('resume', file);
 
       try {
-        const response = await fetch('http://localhost:3000/api/upload-resume', {
+        console.log('Sending resume upload request to server...');
+        const response = await fetch('http://localhost:3001/api/upload-resume', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include'
         });
 
+        console.log('Response status:', response.status);
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
         }
 
         const data = await response.json();
@@ -398,7 +396,6 @@
           localStorage.setItem('candidateId', state.candidateId);
           localStorage.setItem('candidateName', state.candidateName);
 
-          // Store extracted profile
           state.extractedProfile = data.parsedData;
           localStorage.setItem('extractedProfile', JSON.stringify(state.extractedProfile));
           renderProfilePreview(state.extractedProfile);
@@ -406,7 +403,6 @@
           els.uploadStatus.textContent = 'Resume uploaded successfully!';
           els.uploadStatus.className = 'text-sm text-green-600';
 
-          // Display extracted data in chat
           addChatMessage('AI', `Hello ${state.extractedProfile.candidateName || 'there'}! Thanks for uploading your resume.`);
 
           if (data.parsedData.skills.length > 0) {
@@ -416,12 +412,11 @@
             addChatMessage('AI', 'Could you tell me about your most recent work experience?');
           }
 
-          // Update candidate in recruiter view
           const newCandidate = {
             id: data.candidateId,
             name: data.parsedData.candidateName || `Candidate ${state.candidates.length + 1}`,
             skills: data.parsedData.skills,
-            score: Math.min(100, data.parsedData.skills.length * 12), // Example scoring
+            score: Math.min(100, data.parsedData.skills.length * 12),
             date: new Date()
           };
 
@@ -434,7 +429,7 @@
           addChatMessage('AI', `Error: ${data.error || 'Failed to upload resume.'}`);
         }
       } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('Fetch error details:', error);
         els.uploadStatus.textContent = `Error: ${error.message}`;
         els.uploadStatus.className = 'text-sm text-red-600';
         addChatMessage('AI', `Error: Could not connect to server. Details: ${error.message}`);
@@ -444,7 +439,6 @@
     });
 
     // Handle chat message
-    // *** REMOVED DUPLICATE LISTENER HERE ***
     els.sendBtn.addEventListener('click', async () => {
       const message = els.chatInput.value.trim();
       if (!message) return;
@@ -459,7 +453,7 @@
 
       showLoading();
       try {
-        const response = await fetch('http://localhost:3000/api/chat', {
+        const response = await fetch('http://localhost:3001/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidateId: state.candidateId, message })
@@ -490,7 +484,6 @@
 
       let filteredCandidates = [...state.candidates];
 
-      // Apply search filter if term exists
       if (searchTerm) {
         filteredCandidates = filteredCandidates.filter(candidate =>
           candidate.name.toLowerCase().includes(searchTerm) ||
@@ -498,7 +491,6 @@
         );
       }
 
-      // Apply sorting
       filteredCandidates.sort((a, b) => {
         switch(sortOption) {
           case 'score-desc':
@@ -510,11 +502,10 @@
           case 'date-asc':
             return new Date(a.date) - new Date(b.date);
           default:
-            return b.score - a.score; // Default sort
+            return b.score - a.score;
         }
       });
 
-      // Render table
       els.candidateTableBody.innerHTML = '';
 
       if (filteredCandidates.length === 0) {
@@ -560,7 +551,6 @@
         els.candidateTableBody.appendChild(row);
       });
 
-      // Add event listeners to view details buttons
       document.querySelectorAll('.view-details-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
           const candidateId = btn.getAttribute('data-id');
@@ -573,9 +563,9 @@
     async function showCandidateDetails(candidateId) {
       showLoading();
       try {
-        const response = await fetch(`http://localhost:3000/api/candidates/${candidateId}`, {
+        const response = await fetch(`http://localhost:3001/api/candidates/${candidateId}`, {
           method: 'GET',
-          credentials: 'include' // Important for session handling
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -585,10 +575,8 @@
         const data = await response.json();
         const candidate = data.candidate;
 
-        // Populate modal with candidate details
         els.detailName.textContent = candidate.parsedData.candidateName || 'Candidate Details';
 
-        // Skills
         els.detailSkills.innerHTML = '';
         (candidate.parsedData.skills || []).forEach(skill => {
           const skillBadge = document.createElement('span');
@@ -597,7 +585,6 @@
           els.detailSkills.appendChild(skillBadge);
         });
 
-        // Experience
         els.detailExperience.innerHTML = '';
         if (candidate.parsedData.experience && candidate.parsedData.experience.length > 0) {
           const expList = document.createElement('ul');
@@ -612,7 +599,6 @@
           els.detailExperience.textContent = 'No experience information extracted';
         }
 
-        // Education
         els.detailEducation.innerHTML = '';
         if (candidate.parsedData.education && candidate.parsedData.education.length > 0) {
           const eduList = document.createElement('ul');
@@ -627,7 +613,6 @@
           els.detailEducation.textContent = 'No education information extracted';
         }
 
-        // Chat History
         els.detailChatHistory.innerHTML = '';
         if (candidate.chatHistory && candidate.chatHistory.length > 0) {
           candidate.chatHistory.forEach(msg => {
@@ -640,7 +625,6 @@
           els.detailChatHistory.textContent = 'No chat history available';
         }
 
-        // Show modal
         els.candidateDetailModal.classList.remove('hidden');
 
       } catch (error) {
@@ -664,7 +648,7 @@
     // Enter key in chat input
     els.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        e.preventDefault(); // Prevent form submission if inside a form
+        e.preventDefault();
         els.sendBtn.click();
       }
     });
@@ -679,40 +663,32 @@
 
     // Initial setup
     (function init() {
-      // Check login status on page load
       if (state.isLoggedIn) {
-        // Verify session is still valid with server
-        fetch('http://localhost:3000/api/verify-session', {
+        fetch('http://localhost:3001/api/verify-session', {
           credentials: 'include'
         })
         .then(response => {
           if (!response.ok) {
-            // If session is invalid, log out client-side
             state.isLoggedIn = false;
             localStorage.setItem('isLoggedIn', 'false');
-            // Optionally redirect to candidate view or show login
             if (state.view === 'recruiter') {
               els.candidateViewBtn.click();
             }
           }
         })
         .catch(() => {
-          // If server is down, we'll just use the stored login state for now
           console.warn('Could not verify session with server.');
         });
       }
 
-      // Render initial view based on state
       if (state.view === 'candidate') {
         els.candidateViewBtn.click();
       } else if (state.view === 'recruiter' && state.isLoggedIn) {
-        els.recruiterViewBtn.click(); // This already calls updateRecruiterTable
+        els.recruiterViewBtn.click();
       } else {
-        // Default to candidate view if not logged in or view is invalid
         els.candidateViewBtn.click();
       }
 
-      // Render profile if available (for candidate view)
       if (state.extractedProfile && state.view === 'candidate') {
         renderProfilePreview(state.extractedProfile);
       }
@@ -720,5 +696,5 @@
       console.log('Recruitr app initialized');
     })();
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933288bd3c7e7b98',t:'MTc0NTEzMDAwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9332c2bf49b5135d',t:'MTc0NTEzMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
