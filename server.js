@@ -12,19 +12,15 @@ const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
 
 const app = express();
-const port = process.env.PORT || 3001; // Use Render's assigned port
+const port = process.env.PORT || 3001;
 
 // MongoDB setup
-// [ACTION REQUIRED]: Set MONGODB_URI in Render's environment variables (e.g., mongodb+srv://<username>:<password>@<cluster>.mongodb.net/recruitr)
-// Current value contains sensitive credentials and should not be hardcoded
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   console.error('MONGODB_URI environment variable is required');
   process.exit(1);
 }
 
-// Session Secret
-// [ACTION REQUIRED]: Set SESSION_SECRET in Render's environment variables (e.g., a 64-character hex string generated via crypto.randomBytes(32).toString('hex'))
 const SESSION_SECRET = process.env.SESSION_SECRET;
 if (!SESSION_SECRET) {
   console.error('SESSION_SECRET environment variable is required');
@@ -43,9 +39,8 @@ MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
   });
 
 // Middleware
-// [ACTION REQUIRED]: Set FRONTEND_URL in Render's environment variables (e.g., https://recruitr-frontend.onrender.com)
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://recruitr.onrender.com',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
@@ -57,27 +52,22 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
-// Add logging middleware to debug incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} request to ${req.url}`);
   next();
 });
 
-// Replace hardcoded credentials with env vars
-// [ACTION REQUIRED]: Set RECRUITER_USER in Render's environment variables (e.g., adminrecruitr)
 const RECRUITER_USER = process.env.RECRUITER_USER || 'adminrecruitr';
-// [ACTION REQUIRED]: Set RECRUITER_PASS_HASH in Render's environment variables (bcrypt-hashed password, generate using bcrypt.hash('yourpassword', 10))
 const RECRUITER_PASS_HASH = process.env.RECRUITER_PASS_HASH;
 if (!RECRUITER_PASS_HASH) {
   console.error('RECRUITER_PASS_HASH environment variable is required in production');
   process.exit(1);
 }
 
-// Improved login endpoint
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   
-  if (username === adminrecruitr) {
+  if (username === RECRUITER_USER) {
     if (process.env.NODE_ENV === 'development' && password === 'password') {
       req.session.user = { username };
       return res.json({ success: true, username });
@@ -92,7 +82,6 @@ app.post('/api/login', async (req, res) => {
   res.status(401).json({ error: 'Invalid credentials' });
 });
 
-// Session verification endpoint (used by index.html)
 app.get('/api/verify-session', (req, res) => {
   if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
     return res.json({ success: true, username: req.session.user.username });
@@ -100,7 +89,6 @@ app.get('/api/verify-session', (req, res) => {
   res.status(401).json({ error: 'Not authenticated' });
 });
 
-// Auth middleware
 function requireAuth(req, res, next) {
   if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
     return next();
@@ -108,21 +96,9 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-// Set up file storage (ephemeral on Render, files deleted on redeployment)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
+// Use memory storage instead of disk storage for file uploads
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(), // Store file in memory instead of disk
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext !== '.pdf' && ext !== '.docx') {
@@ -130,10 +106,9 @@ const upload = multer({
     }
     cb(null, true);
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// Expanded skill list for matching
 const SKILL_LIST = [
   'python', 'javascript', 'sql', 'java', 'react', 'node.js', 'html', 'css',
   'typescript', 'angular', 'vue', 'mongodb', 'mysql', 'postgresql', 'aws',
@@ -144,7 +119,6 @@ const SKILL_LIST = [
   'customer service', 'technical support', 'data analysis', 'project management'
 ];
 
-// Enhanced name extraction function
 function extractCandidateName(text) {
   const lines = text.split('\n').slice(0, 10);
   
@@ -167,17 +141,18 @@ function extractCandidateName(text) {
   return 'Unknown Candidate';
 }
 
-// Improved parseResume function with name extraction
-async function parseResume(filePath, fileType) {
+// Updated parseResume to handle file buffers directly
+async function parseResume(fileBuffer, fileType, originalFilename) {
   let text;
   try {
     if (fileType === '.pdf') {
-      const dataBuffer = fs.readFileSync(filePath);
-      const data = await pdf(dataBuffer);
+      const data = await pdf(fileBuffer);
       text = data.text;
     } else if (fileType === '.docx') {
-      const result = await mammoth.extractRawText({ path: filePath });
+      const result = await mammoth.extractRawText({ buffer: fileBuffer });
       text = result.value;
+    } else {
+      throw new Error('Unsupported file type');
     }
   } catch (error) {
     console.error(`Error extracting text from ${fileType}:`, error);
@@ -215,11 +190,12 @@ async function parseResume(filePath, fileType) {
     skills: allSkills,
     experience: experience.map(e => e.trim()),
     education: education.map(e => e.trim()),
-    rawText: text
+    rawText: text,
+    originalFilename // Include the original filename for reference
   };
 }
 
-// API endpoint for resume upload
+// Updated API endpoint for resume upload
 app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
   if (!req.file) {
     console.log('No file uploaded or invalid file type');
@@ -227,12 +203,12 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
   }
 
   try {
-    console.log(`Processing file: ${req.file.filename}`);
-    const fileType = path.extname(req.file.filename).toLowerCase();
-    const parsedData = await parseResume(req.file.path, fileType);
+    console.log(`Processing file: ${req.file.originalname}`);
+    const fileType = path.extname(req.file.originalname).toLowerCase();
+    const parsedData = await parseResume(req.file.buffer, fileType, req.file.originalname);
 
     const candidate = {
-      fileName: req.file.filename,
+      fileName: req.file.originalname,
       parsedData,
       createdAt: new Date(),
       chatHistory: []
@@ -242,7 +218,7 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
 
     const response = {
       message: 'Resume uploaded successfully',
-      fileName: req.file.filename,
+      fileName: req.file.originalname,
       parsedData,
       candidateId
     };
@@ -251,19 +227,10 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
   } catch (error) {
     console.error('Error parsing resume:', error);
     res.status(500).json({ error: 'Failed to parse resume' });
-  } finally {
-    // Clean up uploaded file to save space (optional for MVP, since Render filesystem is ephemeral)
-    if (req.file && req.file.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (err) {
-        console.error('Error deleting uploaded file:', err);
-      }
-    }
   }
 });
 
-// Enhanced chat endpoint with better context awareness
+// Rest of the server.js remains unchanged
 app.post('/api/chat', async (req, res) => {
   const { candidateId, message } = req.body;
   if (!candidateId || !message) {
@@ -347,7 +314,6 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Add endpoint to get detailed candidate data
 app.get('/api/candidates/:id', requireAuth, async (req, res) => {
   try {
     const candidateId = req.params.id;
@@ -366,20 +332,10 @@ app.get('/api/candidates/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Serve index.html for the root path
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // Assumes index.html is in the same directory as server.js
-});
-
-// Serve static files (optional)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Health check endpoint for Render
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-// Start server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
