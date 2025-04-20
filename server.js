@@ -366,6 +366,11 @@ app.get('/api/candidates/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Serve index.html for the root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html')); // Assumes index.html is in the same directory as server.js
+});
+
 // Serve static files (optional)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
