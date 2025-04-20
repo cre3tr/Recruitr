@@ -114,7 +114,7 @@
         <div class="bg-white p-6 rounded-lg shadow-lg w-4/5 max-w-4xl max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-4">
             <h2 id="detail-name" class="text-xl font-bold">Candidate Details</h2>
-            <button id="detail-close-btn" class="text-2xl">&times;</button>
+            <button id="detail-close-btn" class="text-2xl">×</button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
@@ -140,6 +140,9 @@
   </div>
 
   <script>
+    // Define the backend URL (to be replaced with your Render backend URL)
+    const BACKEND_URL = 'https://your-backend-service.onrender.com'; // Replace with actual Render backend URL
+
     // Enhanced JavaScript with better state management and UI improvements
 
     // State Management
@@ -323,7 +326,7 @@
 
       showLoading();
       try {
-        const response = await fetch('http://localhost:3001/api/login', {
+        const response = await fetch(`${BACKEND_URL}/api/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -376,7 +379,7 @@
 
       try {
         console.log('Sending resume upload request to server...');
-        const response = await fetch('http://localhost:3001/api/upload-resume', {
+        const response = await fetch(`${BACKEND_URL}/api/upload-resume`, {
           method: 'POST',
           body: formData,
           credentials: 'include'
@@ -453,7 +456,7 @@
 
       showLoading();
       try {
-        const response = await fetch('http://localhost:3001/api/chat', {
+        const response = await fetch(`${BACKEND_URL}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ candidateId: state.candidateId, message })
@@ -563,7 +566,7 @@
     async function showCandidateDetails(candidateId) {
       showLoading();
       try {
-        const response = await fetch(`http://localhost:3001/api/candidates/${candidateId}`, {
+        const response = await fetch(`${BACKEND_URL}/api/candidates/${candidateId}`, {
           method: 'GET',
           credentials: 'include'
         });
@@ -664,7 +667,7 @@
     // Initial setup
     (function init() {
       if (state.isLoggedIn) {
-        fetch('http://localhost:3001/api/verify-session', {
+        fetch(`${BACKEND_URL}/api/verify-session`, {
           credentials: 'include'
         })
         .then(response => {
@@ -696,5 +699,5 @@
       console.log('Recruitr app initialized');
     })();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933288bd3c7e7b98',t:'MTc0NTEzMDAwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9332c2bf49b5135d',t:'MTc0NTEzMjM4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

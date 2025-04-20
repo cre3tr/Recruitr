@@ -12,7 +12,7 @@ const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
 
 const app = express();
-const port = 3001; // Explicitly set to 3001 to avoid conflict with front-end
+const port = process.env.PORT || 3001; // Use Render's assigned port
 
 // MongoDB setup
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/recruitr';
@@ -31,7 +31,7 @@ MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000', // Front-end port
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Use FRONTEND_URL for Render
   credentials: true
 }));
 app.use(express.json());
@@ -40,7 +40,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: MONGODB_URI }),
-  cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // Add logging middleware to debug incoming requests
