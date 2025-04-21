@@ -234,7 +234,7 @@ async function parseResume(fileBuffer, fileType, originalFilename) {
   };
 }
 
-app.post('/api/upload-resume', async (req, res) => {
+app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
   if (!db) {
     return res.status(503).json({ error: 'Database not connected. Please try again later.' });
   }
