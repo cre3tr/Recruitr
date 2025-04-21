@@ -37,7 +37,8 @@ async function connectToMongoDB() {
   while (retries < maxRetries) {
     try {
       mongoClient = new MongoClient(MONGODB_URI, {
-        useUnifiedTopology: true,
+        // Explicitly enable TLS for MongoDB Atlas
+        tls: true,
         serverSelectionTimeoutMS: 5000 // Timeout after 5 seconds
       });
       await mongoClient.connect();
@@ -62,6 +63,7 @@ connectToMongoDB();
 
 // Middleware
 app.use(cors({
+  // Ensure FRONTEND_URL is set to https://recruitr.onrender.com in Render's environment variables
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
@@ -74,7 +76,7 @@ app.use(session({
     mongoUrl: MONGODB_URI,
     // If MongoDB isn't connected yet, MongoStore will fail to initialize.
     // We'll handle this gracefully by disabling session storage until connected.
-    mongoOptions: { useUnifiedTopology: true }
+    mongoOptions: { tls: true }
   }),
   cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
