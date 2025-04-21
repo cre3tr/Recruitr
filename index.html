@@ -8,11 +8,16 @@
 </head>
 <body class="bg-gray-50">
   <div id="app">
+    <!-- Backend Status Banner -->
+    <div id="backend-status-banner" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 hidden">
+      <p>Warning: The backend server is currently unavailable. Some features (like resume upload and login) may not work. Please try again later.</p>
+    </div>
+
     <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
       <div class="bg-white p-6 rounded-lg shadow-lg w-96">
         <h2 class="text-xl font-bold mb-4">Recruiter Login</h2>
-        <input id="username-input" type="text" placeholder="Username" class="w-full border p-2 WAV mb-3">
+        <input id="username-input" type="text" placeholder="Username" class="w-full border p-2 mb-3">
         <input id="password-input" type="password" placeholder="Password" class="w-full border p-2 mb-4">
         <div class="flex justify-between">
           <button id="login-cancel-btn" class="bg-gray-300 p-2 rounded">Cancel</button>
@@ -140,10 +145,9 @@
   </div>
 
   <script>
-    // Define the backend URL (to be replaced with your Render backend URL)
-    const BACKEND_URL = 'https://recruitr.onrender.com'; // Replace with actual Render backend URL
-
-    // Enhanced JavaScript with better state management and UI improvements
+    // Define the backend URL
+    // This should match your Render backend service URL (e.g., https://recruitr-backend.onrender.com)
+    const BACKEND_URL = 'https://recruitr-backend.onrender.com';
 
     // State Management
     const state = {
@@ -155,11 +159,13 @@
       chatMessages: JSON.parse(localStorage.getItem('chatMessages')) || [
         { sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }
       ],
-      extractedProfile: JSON.parse(localStorage.getItem('extractedProfile')) || null
+      extractedProfile: JSON.parse(localStorage.getItem('extractedProfile')) || null,
+      backendAvailable: true // Track backend availability
     };
 
     // DOM Elements
     const els = {
+      backendStatusBanner: document.getElementById('backend-status-banner'),
       candidateViewBtn: document.getElementById('candidate-view-btn'),
       recruiterViewBtn: document.getElementById('recruiter-view-btn'),
       candidateView: document.getElementById('candidate-view'),
@@ -664,39 +670,62 @@
       }
     });
 
+    // Check backend availability
+    async function checkBackendAvailability() {
+      try {
+        const response = await fetch(`${BACKEND_URL}/health`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        state.backendAvailable = data.status === 'OK';
+      } catch (error) {
+        console.warn('Could not connect to backend:', error);
+        state.backendAvailable = false;
+      }
+
+      if (!state.backendAvailable) {
+        els.backendStatusBanner.classList.remove('hidden');
+      } else {
+        els.backendStatusBanner.classList.add('hidden');
+      }
+    }
+
     // Initial setup
     (function init() {
-      if (state.isLoggedIn) {
-        fetch(`${BACKEND_URL}/api/verify-session`, {
-          credentials: 'include'
-        })
-        .then(response => {
-          if (!response.ok) {
-            state.isLoggedIn = false;
-            localStorage.setItem('isLoggedIn', 'false');
-            if (state.view === 'recruiter') {
-              els.candidateViewBtn.click();
+      checkBackendAvailability().then(() => {
+        if (state.isLoggedIn) {
+          fetch(`${BACKEND_URL}/api/verify-session`, {
+            credentials: 'include'
+          })
+          .then(response => {
+            if (!response.ok) {
+              state.isLoggedIn = false;
+              localStorage.setItem('isLoggedIn', 'false');
+              if (state.view === 'recruiter') {
+                els.candidateViewBtn.click();
+              }
             }
-          }
-        })
-        .catch(() => {
-          console.warn('Could not verify session with server.');
-        });
-      }
+          })
+          .catch(() => {
+            console.warn('Could not verify session with server.');
+          });
+        }
 
-      if (state.view === 'candidate') {
-        els.candidateViewBtn.click();
-      } else if (state.view === 'recruiter' && state.isLoggedIn) {
-        els.recruiterViewBtn.click();
-      } else {
-        els.candidateViewBtn.click();
-      }
+        if (state.view === 'candidate') {
+          els.candidateViewBtn.click();
+        } else if (state.view === 'recruiter' && state.isLoggedIn) {
+          els.recruiterViewBtn.click();
+        } else {
+          els.candidateViewBtn.click();
+        }
 
-      if (state.extractedProfile && state.view === 'candidate') {
-        renderProfilePreview(state.extractedProfile);
-      }
+        if (state.extractedProfile && state.view === 'candidate') {
+          renderProfilePreview(state.extractedProfile);
+        }
 
-      console.log('Recruitr app initialized');
+        console.log('Recruitr app initialized');
+      });
     })();
   </script>
 </body>
