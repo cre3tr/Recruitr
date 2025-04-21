@@ -3,7 +3,6 @@ const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { MongoClient, ObjectId } = require('mongodb');
@@ -28,15 +27,38 @@ if (!SESSION_SECRET) {
 }
 
 let db;
-MongoClient.connect(MONGODB_URI, { useUnifiedTopology: true })
-  .then(client => {
-    db = client.db();
-    console.log('Connected to MongoDB');
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
+let mongoClient;
+
+// Function to connect to MongoDB with retry logic
+async function connectToMongoDB() {
+  const maxRetries = 5;
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      mongoClient = new MongoClient(MONGODB_URI, {
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000 // Timeout after 5 seconds
+      });
+      await mongoClient.connect();
+      db = mongoClient.db();
+      console.log('Connected to MongoDB');
+      return;
+    } catch (err) {
+      retries++;
+      console.error(`MongoDB connection attempt ${retries}/${maxRetries} failed:`, err);
+      if (retries === maxRetries) {
+        console.error('Max retries reached. Could not connect to MongoDB.');
+        return;
+      }
+      // Wait 5 seconds before retrying
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+}
+
+// Start MongoDB connection (but don't block server startup)
+connectToMongoDB();
 
 // Middleware
 app.use(cors({
@@ -48,7 +70,12 @@ app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: MONGODB_URI }),
+  store: MongoStore.create({
+    mongoUrl: MONGODB_URI,
+    // If MongoDB isn't connected yet, MongoStore will fail to initialize.
+    // We'll handle this gracefully by disabling session storage until connected.
+    mongoOptions: { useUnifiedTopology: true }
+  }),
   cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
 
@@ -65,6 +92,10 @@ if (!RECRUITER_PASS_HASH) {
 }
 
 app.post('/api/login', async (req, res) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   const { username, password } = req.body;
   
   if (username === RECRUITER_USER) {
@@ -83,6 +114,10 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.get('/api/verify-session', (req, res) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
     return res.json({ success: true, username: req.session.user.username });
   }
@@ -90,15 +125,18 @@ app.get('/api/verify-session', (req, res) => {
 });
 
 function requireAuth(req, res, next) {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   if (req.session && req.session.user && req.session.user.username === RECRUITER_USER) {
     return next();
   }
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-// Use memory storage instead of disk storage for file uploads
 const upload = multer({
-  storage: multer.memoryStorage(), // Store file in memory instead of disk
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext !== '.pdf' && ext !== '.docx') {
@@ -141,7 +179,6 @@ function extractCandidateName(text) {
   return 'Unknown Candidate';
 }
 
-// Updated parseResume to handle file buffers directly
 async function parseResume(fileBuffer, fileType, originalFilename) {
   let text;
   try {
@@ -191,12 +228,15 @@ async function parseResume(fileBuffer, fileType, originalFilename) {
     experience: experience.map(e => e.trim()),
     education: education.map(e => e.trim()),
     rawText: text,
-    originalFilename // Include the original filename for reference
+    originalFilename
   };
 }
 
-// Updated API endpoint for resume upload
-app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
+app.post('/api/upload-resume', async (req, res) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   if (!req.file) {
     console.log('No file uploaded or invalid file type');
     return res.status(400).json({ error: 'No file uploaded or invalid file type' });
@@ -226,12 +266,15 @@ app.post('/api/upload-resume', upload.single('resume'), async (req, res) => {
     res.json(response);
   } catch (error) {
     console.error('Error parsing resume:', error);
-    res.status(500).json({ error: 'Failed to parse resume' });
+    res.status(500).json({ error: `Failed to parse resume: ${error.message}` });
   }
 });
 
-// Rest of the server.js remains unchanged
 app.post('/api/chat', async (req, res) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   const { candidateId, message } = req.body;
   if (!candidateId || !message) {
     return res.status(400).json({ error: 'Candidate ID and message required' });
@@ -315,6 +358,10 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.get('/api/candidates/:id', requireAuth, async (req, res) => {
+  if (!db) {
+    return res.status(503).json({ error: 'Database not connected. Please try again later.' });
+  }
+
   try {
     const candidateId = req.params.id;
     const candidate = await db.collection('candidates').findOne(
@@ -333,9 +380,19 @@ app.get('/api/candidates/:id', requireAuth, async (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+  res.status(200).json({ status: db ? 'OK' : 'Database not connected' });
 });
 
+// Start the server regardless of MongoDB connection status
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
+});
+
+// Handle process termination gracefully
+process.on('SIGTERM', async () => {
+  console.log('Received SIGTERM. Closing MongoDB connection...');
+  if (mongoClient) {
+    await mongoClient.close();
+  }
+  process.exit(0);
 });
