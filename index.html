@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recruitr</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitr</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-50">
   <div id="app">
@@ -15,24 +18,24 @@
 
     <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 class="text-xl font-bold mb-4">Recruiter Login</h2>
-        <input id="username-input" type="text" placeholder="Username" class="w-full border p-2 mb-3">
-        <input id="password-input" type="password" placeholder="Password" class="w-full border p-2 mb-4">
-        <div class="flex justify-between">
-          <button id="login-cancel-btn" class="bg-gray-300 p-2 rounded">Cancel</button>
-          <button id="login-submit-btn" class="bg-blue-500 text-white p-2 rounded">Login</button>
+      <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Recruiter Login</h2>
+        <input id="username-input" type="text" placeholder="Username" class="w-full border border-gray-300 p-3 mb-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input id="password-input" type="password" placeholder="Password" class="w-full border border-gray-300 p-3 mb-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="flex justify-end space-x-4">
+          <button id="login-cancel-btn" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
+          <button id="login-submit-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Login</button>
         </div>
       </div>
     </div>
 
     <!-- Main Navigation -->
-    <nav class="bg-blue-600 text-white p-4">
+    <nav class="bg-white shadow-sm p-3">
       <div class="container mx-auto flex justify-between items-center">
-        <div class="text-xl font-bold">Recruitr</div>
+        <div class="text-2xl font-bold">Recruitr</div>
         <div class="flex">
-          <button id="candidate-view-btn" class="mr-2 p-2 bg-blue-700 rounded">Candidate View</button>
-          <button id="recruiter-view-btn" class="p-2 bg-blue-500 rounded">Recruiter View</button>
+          <button id="candidate-view-btn" class="mr-3 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Candidate View</button>
+          <button id="recruiter-view-btn" class="py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Recruiter View</button>
         </div>
       </div>
     </nav>
@@ -43,72 +46,75 @@
     </div>
 
     <!-- Candidate View -->
-    <div id="candidate-view" class="max-w-3xl mx-auto p-4 mt-4 bg-white rounded-lg shadow">
-      <h1 class="text-2xl font-bold mb-4">Candidate Portal</h1>
+    <div id="candidate-view" class="max-w-4xl mx-auto p-6 mt-8">
+      <h1 class="text-3xl font-bold mb-6 text-gray-800">Candidate Portal</h1>
 
       <!-- Resume Upload Section -->
-      <div class="mb-6 p-4 border rounded-lg bg-gray-50">
-        <h2 class="text-lg font-semibold mb-2">Upload Your Resume</h2>
-        <p class="text-gray-600 mb-3">PDF or DOCX format (max 5MB)</p>
-        <input id="resume-input" type="file" accept=".pdf,.docx" class="mb-2">
-        <div id="upload-status" class="text-sm text-gray-500"></div>
+      <div class="mb-8 p-6 border border-gray-200 rounded-lg bg-white">
+        <h2 class="text-xl font-semibold mb-3 text-gray-700">Upload Your Resume</h2>
+        <p class="text-gray-500 mb-4">PDF or DOCX format (max 5MB)</p>
+        <input id="resume-input" type="file" accept=".pdf,.docx" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        <div id="upload-status" class="text-sm text-gray-600 mt-2"></div>
       </div>
 
       <!-- Profile Preview after upload -->
-      <div id="profile-preview" class="mb-6 p-4 border rounded-lg hidden">
-        <h2 class="text-lg font-semibold mb-2">Your Profile</h2>
+      <div id="profile-preview" class="mb-8 p-6 border border-gray-200 rounded-lg bg-white hidden">
+        <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Profile</h2>
         <div id="profile-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
       <!-- Chat Section -->
-      <div class="mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-lg font-semibold">Chat with Recruitr</h2>
-          <button id="clear-chat-btn" class="p-1 text-sm bg-red-500 text-white rounded">Clear Chat</button>
+      <div class="mb-4 bg-white p-6 rounded-lg border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-gray-700">Chat with Recruitr</h2>
+          <button id="clear-chat-btn" class="py-1 px-3 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Clear Chat</button>
         </div>
-        <div id="chat-box" class="border rounded-lg p-4 h-96 overflow-y-auto mb-4 bg-gray-50">
-          <div class="mb-3 p-2 bg-blue-100 rounded-lg"><strong>AI:</strong> Welcome to Recruitr! Please upload your resume to start.</div>
+        <div id="chat-box" class="border rounded-lg p-4 h-96 overflow-y-auto mb-4 bg-gray-50/50">
+          <div class="mb-3 p-2 bg-blue-100 rounded-lg"><strong>Recruitr:</strong> Welcome to Recruitr! Please upload your resume to start.</div>
         </div>
         <div class="flex">
-          <input id="chat-input" type="text" class="flex-1 border p-2 mr-2 rounded-l" placeholder="Type your response...">
-          <button id="send-btn" class="bg-blue-500 text-white p-2 rounded-r">Send</button>
+          <input id="chat-input" type="text" class="flex-1 border border-gray-300 p-3 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your response...">
+          <button id="send-btn" class="bg-blue-600 text-white py-3 px-4 rounded-r-md hover:bg-blue-700 transition-colors">Send</button>
         </div>
       </div>
     </div>
 
-    <!-- Recruiter View -->
-    <div id="recruiter-view" class="max-w-5xl mx-auto p-4 mt-4 bg-white rounded-lg shadow hidden">
-      <h1 class="text-2xl font-bold mb-4">Recruiter Dashboard</h1>
+    <!-- Recruiter View (Full Width) -->
+    <div id="recruiter-view" class="container mx-auto p-6 mt-8 hidden">
+      <h1 class="text-3xl font-bold mb-6 text-gray-800">Recruiter Dashboard</h1>
 
       <!-- Filters -->
-      <div class="mb-4 p-3 border rounded-lg bg-gray-50">
-        <div class="flex flex-wrap gap-3">
-          <input id="search-input" type="text" placeholder="Search candidates..." class="border p-2 rounded">
-          <select id="sort-select" class="border p-2 rounded">
+      <div class="mb-6 p-4 border rounded-lg bg-white">
+        <div class="flex flex-wrap gap-4 items-center">
+          <input id="search-input" type="text" placeholder="Search candidates..." class="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select id="sort-select" class="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="score-desc">Highest Match</option>
             <option value="score-asc">Lowest Match</option>
             <option value="date-desc">Newest First</option>
             <option value="date-asc">Oldest First</option>
           </select>
-          <button id="apply-filters-btn" class="bg-blue-500 text-white p-2 rounded">Apply</button>
+          <button id="apply-filters-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Apply</button>
+        </div>
+        <div class="mt-4">
+          <button id="logout-btn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">Logout</button>
         </div>
       </div>
 
       <!-- Candidate Table -->
-      <div class="overflow-x-auto">
-        <table class="w-full border">
+      <div class="overflow-x-auto bg-white rounded-lg shadow">
+        <table class="w-full text-sm text-left text-gray-500">
           <thead>
-            <tr class="bg-gray-100">
-              <th class="p-2 text-left">Name</th>
-              <th class="p-2 text-left">Skills</th>
-              <th class="p-2 text-center">Match Score</th>
-              <th class="p-2 text-center">Date</th>
-              <th class="p-2 text-center">Action</th>
+            <tr class="text-xs text-gray-700 uppercase bg-gray-50">
+              <th scope="col" class="px-6 py-3">Name</th>
+              <th scope="col" class="px-6 py-3">Skills</th>
+              <th scope="col" class="px-6 py-3 text-center">Match Score</th>
+              <th scope="col" class="px-6 py-3 text-center">Date</th>
+              <th scope="col" class="px-6 py-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody id="candidate-table-body">
-            <tr>
-              <td colspan="5" class="p-4 text-center text-gray-500">No candidates yet</td>
+            <tr class="bg-white border-b">
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500">No candidates yet</td>
             </tr>
           </tbody>
         </table>
@@ -116,617 +122,61 @@
 
       <!-- Candidate Detail Modal -->
       <div id="candidate-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-4/5 max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div class="flex justify-between items-center mb-4">
-            <h2 id="detail-name" class="text-xl font-bold">Candidate Details</h2>
-            <button id="detail-close-btn" class="text-2xl">×</button>
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div class="flex justify-between items-center mb-6 pb-4 border-b">
+            <h2 id="detail-name" class="text-2xl font-bold text-gray-800">Candidate Details</h2>
+            <button id="detail-close-btn" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
             <div>
-              <h3 class="font-semibold mb-2">Skills</h3>
-              <div id="detail-skills" class="flex flex-wrap gap-2"></div>
+              <h3 class="text-lg font-semibold mb-3 text-gray-700">Skills</h3>
+              <div id="detail-skills" class="flex flex-wrap gap-2">
+                <!-- Skill badges will be inserted here -->
+              </div>
             </div>
             <div>
-              <h3 class="font-semibold mb-2">Experience</h3>
-              <div id="detail-experience"></div>
+              <h3 class="text-lg font-semibold mb-3 text-gray-700">Experience</h3>
+              <div id="detail-experience" class="prose prose-sm max-w-none">
+                <!-- Experience details will be inserted here -->
+              </div>
             </div>
           </div>
           <div class="mb-6">
-            <h3 class="font-semibold mb-2">Education</h3>
-            <div id="detail-education"></div>
+            <h3 class="text-lg font-semibold mb-3 text-gray-700">Education</h3>
+            <div id="detail-education" class="prose prose-sm max-w-none">
+              <!-- Education details will be inserted here -->
+            </div>
           </div>
           <div>
-            <h3 class="font-semibold mb-2">Chat History</h3>
-            <div id="detail-chat-history" class="border p-4 max-h-60 overflow-y-auto bg-gray-50"></div>
+            <h3 class="text-lg font-semibold mb-3 text-gray-700">Chat History</h3>
+            <div id="detail-chat-history" class="border p-4 max-h-60 overflow-y-auto bg-gray-50 rounded-md">
+              <!-- Chat history will be inserted here -->
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    // Define the backend URL
-    // This should match your Render backend service URL (e.g., https://recruitr-backend.onrender.com)
-    const BACKEND_URL = 'https://recruitr-backend.onrender.com';
-
-    // State Management
-    const state = {
-      view: localStorage.getItem('view') || 'candidate',
-      isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
-      candidateId: localStorage.getItem('candidateId') || null,
-      candidateName: localStorage.getItem('candidateName') || null,
-      candidates: JSON.parse(localStorage.getItem('candidates')) || [],
-      chatMessages: JSON.parse(localStorage.getItem('chatMessages')) || [
-        { sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }
-      ],
-      extractedProfile: JSON.parse(localStorage.getItem('extractedProfile')) || null,
-      backendAvailable: true // Track backend availability
-    };
-
-    // DOM Elements
-    const els = {
-      backendStatusBanner: document.getElementById('backend-status-banner'),
-      candidateViewBtn: document.getElementById('candidate-view-btn'),
-      recruiterViewBtn: document.getElementById('recruiter-view-btn'),
-      candidateView: document.getElementById('candidate-view'),
-      recruiterView: document.getElementById('recruiter-view'),
-      chatBox: document.getElementById('chat-box'),
-      resumeInput: document.getElementById('resume-input'),
-      chatInput: document.getElementById('chat-input'),
-      sendBtn: document.getElementById('send-btn'),
-      clearChatBtn: document.getElementById('clear-chat-btn'),
-      candidateTableBody: document.getElementById('candidate-table-body'),
-      loadingIndicator: document.getElementById('loading-indicator'),
-      loginModal: document.getElementById('login-modal'),
-      loginSubmitBtn: document.getElementById('login-submit-btn'),
-      loginCancelBtn: document.getElementById('login-cancel-btn'),
-      usernameInput: document.getElementById('username-input'),
-      passwordInput: document.getElementById('password-input'),
-      profilePreview: document.getElementById('profile-preview'),
-      profileContent: document.getElementById('profile-content'),
-      uploadStatus: document.getElementById('upload-status'),
-      candidateDetailModal: document.getElementById('candidate-detail-modal'),
-      detailName: document.getElementById('detail-name'),
-      detailSkills: document.getElementById('detail-skills'),
-      detailExperience: document.getElementById('detail-experience'),
-      detailEducation: document.getElementById('detail-education'),
-      detailChatHistory: document.getElementById('detail-chat-history'),
-      detailCloseBtn: document.getElementById('detail-close-btn'),
-      searchInput: document.getElementById('search-input'),
-      sortSelect: document.getElementById('sort-select'),
-      applyFiltersBtn: document.getElementById('apply-filters-btn')
-    };
-
-    // Show loading indicator
-    function showLoading() {
-      els.loadingIndicator.classList.remove('hidden');
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
     }
 
-    // Hide loading indicator
-    function hideLoading() {
-      els.loadingIndicator.classList.add('hidden');
+    /* Custom styles for active/inactive navigation buttons */
+    #candidate-view-btn.active {
+      background-color: #2563EB; /* blue-600 */
     }
-
-    // Helper to add chat message
-    function addChatMessage(sender, text) {
-      state.chatMessages.push({ sender, text, timestamp: new Date() });
-      localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
-      renderChatMessages();
+    #candidate-view-btn.inactive {
+      background-color: #9CA3AF; /* gray-400 */
     }
-
-    // Render chat messages with improved styling
-    function renderChatMessages() {
-      els.chatBox.innerHTML = '';
-      state.chatMessages.forEach(msg => {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `mb-3 p-2 rounded-lg ${msg.sender === 'AI' ? 'bg-blue-100' : 'bg-green-100 ml-8'}`;
-        messageDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
-        els.chatBox.appendChild(messageDiv);
-      });
-      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    #recruiter-view-btn.active {
+      background-color: #7C3AED; /* purple-600 */
     }
-
-    // Render profile preview
-    function renderProfilePreview(profileData) {
-      if (!profileData) return;
-
-      els.profilePreview.classList.remove('hidden');
-      els.profileContent.innerHTML = '';
-
-      const nameDiv = document.createElement('div');
-      nameDiv.innerHTML = `
-        <h3 class="font-semibold">Name</h3>
-        <p>${profileData.candidateName || 'Unknown'}</p>
-      `;
-      els.profileContent.appendChild(nameDiv);
-
-      const skillsDiv = document.createElement('div');
-      skillsDiv.innerHTML = `
-        <h3 class="font-semibold">Skills</h3>
-        <div class="flex flex-wrap gap-1 mt-1">
-          ${profileData.skills.map(skill =>
-            `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
-          ).join('')}
-        </div>
-      `;
-      els.profileContent.appendChild(skillsDiv);
-
-      if (profileData.experience && profileData.experience.length > 0) {
-        const expDiv = document.createElement('div');
-        expDiv.innerHTML = `
-          <h3 class="font-semibold">Experience</h3>
-          <ul class="list-disc pl-5 mt-1">
-            ${profileData.experience.slice(0, 2).map(exp => `<li>${exp}</li>`).join('')}
-            ${profileData.experience.length > 2 ? '<li>...</li>' : ''}
-          </ul>
-        `;
-        els.profileContent.appendChild(expDiv);
-      }
-
-      if (profileData.education && profileData.education.length > 0) {
-        const eduDiv = document.createElement('div');
-        eduDiv.innerHTML = `
-          <h3 class="font-semibold">Education</h3>
-          <ul class="list-disc pl-5 mt-1">
-            ${profileData.education.slice(0, 2).map(edu => `<li>${edu}</li>`).join('')}
-            ${profileData.education.length > 2 ? '<li>...</li>' : ''}
-          </ul>
-        `;
-        els.profileContent.appendChild(eduDiv);
-      }
+    #recruiter-view-btn.inactive {
+      background-color: #9CA3AF; /* gray-400 */
     }
-
-    // Clear chat
-    els.clearChatBtn.addEventListener('click', () => {
-      state.chatMessages = [{ sender: 'AI', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
-      localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
-      renderChatMessages();
-    });
-
-    // Switch views with authentication check
-    els.candidateViewBtn.addEventListener('click', () => {
-      state.view = 'candidate';
-      localStorage.setItem('view', state.view);
-      els.candidateView.classList.remove('hidden');
-      els.recruiterView.classList.add('hidden');
-      els.candidateViewBtn.classList.add('bg-blue-700');
-      els.candidateViewBtn.classList.remove('bg-blue-500');
-      els.recruiterViewBtn.classList.add('bg-blue-500');
-      els.recruiterViewBtn.classList.remove('bg-blue-700');
-      renderChatMessages();
-      if (state.extractedProfile) {
-        renderProfilePreview(state.extractedProfile);
-      }
-    });
-
-    els.recruiterViewBtn.addEventListener('click', () => {
-      if (!state.isLoggedIn) {
-        els.loginModal.classList.remove('hidden');
-        return;
-      }
-
-      state.view = 'recruiter';
-      localStorage.setItem('view', state.view);
-      els.candidateView.classList.add('hidden');
-      els.recruiterView.classList.remove('hidden');
-      els.recruiterViewBtn.classList.add('bg-blue-700');
-      els.recruiterViewBtn.classList.remove('bg-blue-500');
-      els.candidateViewBtn.classList.add('bg-blue-500');
-      els.candidateViewBtn.classList.remove('bg-blue-700');
-      updateRecruiterTable();
-    });
-
-    // Login modal functionality
-    els.loginCancelBtn.addEventListener('click', () => {
-      els.loginModal.classList.add('hidden');
-    });
-
-    els.loginSubmitBtn.addEventListener('click', async () => {
-      const username = els.usernameInput.value.trim();
-      const password = els.passwordInput.value;
-
-      if (!username || !password) {
-        alert('Please enter both username and password');
-        return;
-      }
-
-      showLoading();
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          state.isLoggedIn = true;
-          localStorage.setItem('isLoggedIn', 'true');
-          els.loginModal.classList.add('hidden');
-          els.recruiterViewBtn.click();
-        } else {
-          alert(`Login failed: ${data.error || 'Invalid credentials'}`);
-        }
-      } catch (error) {
-        console.error('Login error:', error);
-        alert(`Login failed: ${error.message}`);
-      } finally {
-        hideLoading();
-      }
-    });
-
-    // Handle resume upload with enhanced feedback and detailed error logging
-    els.resumeInput.addEventListener('change', async (e) => {
-      e.preventDefault();
-      const file = e.target.files[0];
-      if (!file) {
-        els.uploadStatus.textContent = 'No file selected.';
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        els.uploadStatus.textContent = 'File too large. Maximum size is 5MB.';
-        return;
-      }
-
-      const fileExt = file.name.split('.').pop().toLowerCase();
-      if (fileExt !== 'pdf' && fileExt !== 'docx') {
-        els.uploadStatus.textContent = 'Only PDF and DOCX files are allowed.';
-        return;
-      }
-
-      els.uploadStatus.textContent = 'Uploading...';
-      showLoading();
-
-      const formData = new FormData();
-      formData.append('resume', file);
-
-      try {
-        console.log('Sending resume upload request to server...');
-        const response = await fetch(`${BACKEND_URL}/api/upload-resume`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.message === 'Resume uploaded successfully') {
-          state.candidateId = data.candidateId;
-          state.candidateName = data.parsedData.candidateName || 'Candidate';
-          localStorage.setItem('candidateId', state.candidateId);
-          localStorage.setItem('candidateName', state.candidateName);
-
-          state.extractedProfile = data.parsedData;
-          localStorage.setItem('extractedProfile', JSON.stringify(state.extractedProfile));
-          renderProfilePreview(state.extractedProfile);
-
-          els.uploadStatus.textContent = 'Resume uploaded successfully!';
-          els.uploadStatus.className = 'text-sm text-green-600';
-
-          addChatMessage('AI', `Hello ${state.extractedProfile.candidateName || 'there'}! Thanks for uploading your resume.`);
-
-          if (data.parsedData.skills.length > 0) {
-            addChatMessage('AI', `I see you have experience with ${data.parsedData.skills.join(', ')}.`);
-            addChatMessage('AI', `Could you tell me more about your experience with ${data.parsedData.skills[0]}?`);
-          } else {
-            addChatMessage('AI', 'Could you tell me about your most recent work experience?');
-          }
-
-          const newCandidate = {
-            id: data.candidateId,
-            name: data.parsedData.candidateName || `Candidate ${state.candidates.length + 1}`,
-            skills: data.parsedData.skills,
-            score: Math.min(100, data.parsedData.skills.length * 12),
-            date: new Date()
-          };
-
-          state.candidates.push(newCandidate);
-          localStorage.setItem('candidates', JSON.stringify(state.candidates));
-          updateRecruiterTable();
-        } else {
-          els.uploadStatus.textContent = `Error: ${data.error || 'Failed to upload resume.'}`;
-          els.uploadStatus.className = 'text-sm text-red-600';
-          addChatMessage('AI', `Error: ${data.error || 'Failed to upload resume.'}`);
-        }
-      } catch (error) {
-        console.error('Fetch error details:', error);
-        els.uploadStatus.textContent = `Error: ${error.message}`;
-        els.uploadStatus.className = 'text-sm text-red-600';
-        addChatMessage('AI', `Error: Could not connect to server. Details: ${error.message}`);
-      } finally {
-        hideLoading();
-      }
-    });
-
-    // Handle chat message
-    els.sendBtn.addEventListener('click', async () => {
-      const message = els.chatInput.value.trim();
-      if (!message) return;
-
-      if (!state.candidateId) {
-        addChatMessage('AI', 'Please upload your resume first before we can chat.');
-        return;
-      }
-
-      addChatMessage('User', message);
-      els.chatInput.value = '';
-
-      showLoading();
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ candidateId: state.candidateId, message })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          addChatMessage('AI', data.response);
-        } else {
-          addChatMessage('AI', `Error: ${data.error || 'Failed to process message.'}`);
-        }
-      } catch (error) {
-        console.error('Chat fetch error:', error);
-        addChatMessage('AI', `Error: Could not connect to server. Details: ${error.message}`);
-      } finally {
-        hideLoading();
-        els.chatInput.focus();
-      }
-    });
-
-    // Update recruiter table with filtering and sorting
-    function updateRecruiterTable() {
-      if (!state.isLoggedIn) return;
-
-      const searchTerm = els.searchInput.value.toLowerCase();
-      const sortOption = els.sortSelect.value;
-
-      let filteredCandidates = [...state.candidates];
-
-      if (searchTerm) {
-        filteredCandidates = filteredCandidates.filter(candidate =>
-          candidate.name.toLowerCase().includes(searchTerm) ||
-          (candidate.skills && candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm)))
-        );
-      }
-
-      filteredCandidates.sort((a, b) => {
-        switch(sortOption) {
-          case 'score-desc':
-            return b.score - a.score;
-          case 'score-asc':
-            return a.score - b.score;
-          case 'date-desc':
-            return new Date(b.date) - new Date(a.date);
-          case 'date-asc':
-            return new Date(a.date) - new Date(b.date);
-          default:
-            return b.score - a.score;
-        }
-      });
-
-      els.candidateTableBody.innerHTML = '';
-
-      if (filteredCandidates.length === 0) {
-        els.candidateTableBody.innerHTML = `
-          <tr>
-            <td colspan="5" class="p-4 text-center text-gray-500">No candidates match your criteria</td>
-          </tr>
-        `;
-        return;
-      }
-
-      filteredCandidates.forEach(candidate => {
-        const row = document.createElement('tr');
-        row.className = 'border-t hover:bg-gray-50';
-
-        const date = candidate.date ? new Date(candidate.date) : new Date();
-        const dateStr = date.toLocaleDateString();
-
-        row.innerHTML = `
-          <td class="p-2">${candidate.name}</td>
-          <td class="p-2">
-            <div class="flex flex-wrap gap-1">
-              ${(candidate.skills || []).slice(0, 3).map(skill =>
-                `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
-              ).join('')}
-              ${(candidate.skills || []).length > 3 ? `<span class="text-xs">+${candidate.skills.length - 3} more</span>` : ''}
-            </div>
-          </td>
-          <td class="p-2 text-center">
-            <div class="inline-flex items-center">
-              <div class="w-12 bg-gray-200 rounded-full h-2 mr-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: ${candidate.score}%"></div>
-              </div>
-              <span>${candidate.score}%</span>
-            </div>
-          </td>
-          <td class="p-2 text-center">${dateStr}</td>
-          <td class="p-2 text-center">
-            <button class="view-details-btn bg-blue-500 text-white py-1 px-2 rounded text-sm"
-                    data-id="${candidate.id}">View Details</button>
-          </td>
-        `;
-        els.candidateTableBody.appendChild(row);
-      });
-
-      document.querySelectorAll('.view-details-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const candidateId = btn.getAttribute('data-id');
-          await showCandidateDetails(candidateId);
-        });
-      });
-    }
-
-    // Show candidate details
-    async function showCandidateDetails(candidateId) {
-      showLoading();
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/candidates/${candidateId}`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const candidate = data.candidate;
-
-        els.detailName.textContent = candidate.parsedData.candidateName || 'Candidate Details';
-
-        els.detailSkills.innerHTML = '';
-        (candidate.parsedData.skills || []).forEach(skill => {
-          const skillBadge = document.createElement('span');
-          skillBadge.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
-          skillBadge.textContent = skill;
-          els.detailSkills.appendChild(skillBadge);
-        });
-
-        els.detailExperience.innerHTML = '';
-        if (candidate.parsedData.experience && candidate.parsedData.experience.length > 0) {
-          const expList = document.createElement('ul');
-          expList.className = 'list-disc pl-5';
-          candidate.parsedData.experience.forEach(exp => {
-            const li = document.createElement('li');
-            li.textContent = exp;
-            expList.appendChild(li);
-          });
-          els.detailExperience.appendChild(expList);
-        } else {
-          els.detailExperience.textContent = 'No experience information extracted';
-        }
-
-        els.detailEducation.innerHTML = '';
-        if (candidate.parsedData.education && candidate.parsedData.education.length > 0) {
-          const eduList = document.createElement('ul');
-          eduList.className = 'list-disc pl-5';
-          candidate.parsedData.education.forEach(edu => {
-            const li = document.createElement('li');
-            li.textContent = edu;
-            eduList.appendChild(li);
-          });
-          els.detailEducation.appendChild(eduList);
-        } else {
-          els.detailEducation.textContent = 'No education information extracted';
-        }
-
-        els.detailChatHistory.innerHTML = '';
-        if (candidate.chatHistory && candidate.chatHistory.length > 0) {
-          candidate.chatHistory.forEach(msg => {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `mb-2 p-2 rounded ${msg.sender === 'AI' ? 'bg-blue-100' : 'bg-green-100 ml-4'}`;
-            msgDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
-            els.detailChatHistory.appendChild(msgDiv);
-          });
-        } else {
-          els.detailChatHistory.textContent = 'No chat history available';
-        }
-
-        els.candidateDetailModal.classList.remove('hidden');
-
-      } catch (error) {
-        console.error('Error fetching candidate details:', error);
-        alert(`Error loading candidate details: ${error.message}`);
-      } finally {
-        hideLoading();
-      }
-    }
-
-    // Close candidate detail modal
-    els.detailCloseBtn.addEventListener('click', () => {
-      els.candidateDetailModal.classList.add('hidden');
-    });
-
-    // Apply filters button
-    els.applyFiltersBtn.addEventListener('click', () => {
-      updateRecruiterTable();
-    });
-
-    // Enter key in chat input
-    els.chatInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        els.sendBtn.click();
-      }
-    });
-
-    // Enter key in search input
-    els.searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        els.applyFiltersBtn.click();
-      }
-    });
-
-    // Check backend availability
-    async function checkBackendAvailability() {
-      try {
-        const response = await fetch(`${BACKEND_URL}/health`, {
-          method: 'GET',
-          credentials: 'include'
-        });
-        const data = await response.json();
-        state.backendAvailable = data.status === 'OK';
-      } catch (error) {
-        console.warn('Could not connect to backend:', error);
-        state.backendAvailable = false;
-      }
-
-      if (!state.backendAvailable) {
-        els.backendStatusBanner.classList.remove('hidden');
-      } else {
-        els.backendStatusBanner.classList.add('hidden');
-      }
-    }
-
-    // Initial setup
-    (function init() {
-      checkBackendAvailability().then(() => {
-        if (state.isLoggedIn) {
-          fetch(`${BACKEND_URL}/api/verify-session`, {
-            credentials: 'include'
-          })
-          .then(response => {
-            if (!response.ok) {
-              state.isLoggedIn = false;
-              localStorage.setItem('isLoggedIn', 'false');
-              if (state.view === 'recruiter') {
-                els.candidateViewBtn.click();
-              }
-            }
-          })
-          .catch(() => {
-            console.warn('Could not verify session with server.');
-          });
-        }
-
-        if (state.view === 'candidate') {
-          els.candidateViewBtn.click();
-        } else if (state.view === 'recruiter' && state.isLoggedIn) {
-          els.recruiterViewBtn.click();
-        } else {
-          els.candidateViewBtn.click();
-        }
-
-        if (state.extractedProfile && state.view === 'candidate') {
-          renderProfilePreview(state.extractedProfile);
-        }
-
-        console.log('Recruitr app initialized');
-      });
-    })();
-  </script>
+  </style>
+  <script src="app.js"></script>
 </body>
 </html>

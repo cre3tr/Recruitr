@@ -6,6 +6,7 @@ const path = require('path');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
 const { MongoClient, ObjectId } = require('mongodb');
+const OpenAI = require('openai');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
@@ -13,16 +14,10 @@ const bcrypt = require('bcrypt');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// MongoDB setup
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('MONGODB_URI environment variable is required');
-  process.exit(1);
-}
-
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  console.error('SESSION_SECRET environment variable is required');
+// Environment Variable Validation
+const { MONGODB_URI, SESSION_SECRET, OPENAI_API_KEY, RECRUITER_USER, RECRUITER_PASS_HASH } = process.env;
+if (!MONGODB_URI || !SESSION_SECRET || !OPENAI_API_KEY || !RECRUITER_USER || !RECRUITER_PASS_HASH) {
+  console.error('FATAL ERROR: Missing one or more required environment variables (MONGODB_URI, SESSION_SECRET, OPENAI_API_KEY, RECRUITER_USER, RECRUITER_PASS_HASH)');
   process.exit(1);
 }
 
@@ -58,40 +53,37 @@ async function connectToMongoDB() {
   }
 }
 
-// Start MongoDB connection (but don't block server startup)
-connectToMongoDB();
-
 // Middleware
 app.use(cors({
   // Ensure FRONTEND_URL is set to https://recruitr.onrender.com in Render's environment variables
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://127.0.0.1:5500',
   credentials: true
 }));
 app.use(express.json());
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: MONGODB_URI,
-    // If MongoDB isn't connected yet, MongoStore will fail to initialize.
-    // We'll handle this gracefully by disabling session storage until connected.
-    mongoOptions: { tls: true }
-  }),
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
-}));
+
+// Initialize session middleware after the database is connected
+connectToMongoDB().then(() => {
+  app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      client: mongoClient,
+      dbName: 'recruitr',
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
+    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+  }));
+}).catch(err => {
+  console.error("Failed to connect to MongoDB and set up session store. Exiting.", err);
+  process.exit(1);
+});
 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} request to ${req.url}`);
   next();
 });
-
-const RECRUITER_USER = process.env.RECRUITER_USER || 'adminrecruitr';
-const RECRUITER_PASS_HASH = process.env.RECRUITER_PASS_HASH;
-if (!RECRUITER_PASS_HASH) {
-  console.error('RECRUITER_PASS_HASH environment variable is required in production');
-  process.exit(1);
-}
 
 app.post('/api/login', async (req, res) => {
   if (!db) {
@@ -99,14 +91,9 @@ app.post('/api/login', async (req, res) => {
   }
 
   const { username, password } = req.body;
-  
+
   if (username === RECRUITER_USER) {
-    if (process.env.NODE_ENV === 'development' && password === 'password') {
-      req.session.user = { username };
-      return res.json({ success: true, username });
-    }
-    
-    if (RECRUITER_PASS_HASH && await bcrypt.compare(password, RECRUITER_PASS_HASH)) {
+    if (await bcrypt.compare(password, RECRUITER_PASS_HASH)) {
       req.session.user = { username };
       return res.json({ success: true, username });
     }
@@ -148,6 +135,50 @@ const upload = multer({
   },
   limits: { fileSize: 5 * 1024 * 1024 }
 });
+
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+});
+
+async function parseResumeWithAI(text) {
+  const prompt = `
+    From the following resume text, extract the candidate's name, a list of their skills, a summary of their work experience, and a summary of their education.
+    Format the output as a JSON object with keys: "candidateName", "skills", "experience", "education".
+    The "skills" value should be an array of strings.
+    The "experience" value should be an array of strings, with each string representing a job or project.
+    The "education" value should be an array of strings, with each string representing a degree or certification.
+
+    Resume Text:
+    ---
+    ${text}
+    ---
+  `;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error('OpenAI returned an empty response.');
+    }
+
+    const parsedData = JSON.parse(content);
+    
+    // Basic validation of the parsed data structure
+    if (!parsedData.candidateName || !Array.isArray(parsedData.skills) || !Array.isArray(parsedData.experience) || !Array.isArray(parsedData.education)) {
+      throw new Error('OpenAI returned a malformed JSON object.');
+    }
+
+    return parsedData;
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error);
+    throw new Error('Failed to parse resume with AI.');
+  }
+}
 
 const SKILL_LIST = [
   'python', 'javascript', 'sql', 'java', 'react', 'node.js', 'html', 'css',
@@ -200,35 +231,21 @@ async function parseResume(fileBuffer, fileType, originalFilename) {
 
   console.log('Extracted text:', text);
 
-  const skills = SKILL_LIST.filter(skill => text.toLowerCase().includes(skill));
-  console.log('Skills matched:', skills);
+  // Use AI for more robust parsing
+  const aiParsedData = await parseResumeWithAI(text);
 
-  const skillsSectionMatch = text.match(/(?:skills|technical skills|key skills)[:\n](.*?)(?=\n\n|\n[A-Z])/is);
-  let additionalSkills = [];
-  if (skillsSectionMatch) {
-    const skillsSection = skillsSectionMatch[1].toLowerCase();
-    additionalSkills = SKILL_LIST.filter(skill => skillsSection.includes(skill));
-    console.log('Additional skills from section:', additionalSkills);
-  } else {
-    console.log('No skills section found');
-  }
-
-  const allSkills = [...new Set([...skills, ...additionalSkills])];
-
-  const experience = text.match(/(engineer|developer|manager|analyst|consultant|intern|associate|lead|senior|junior|specialist|support|administrator)\s*[\w\s]*(?:\d{4}\s*-\s*\d{4}|\d{4}\s*-\s*present|\d{4})/gi) || [];
-  console.log('Experience matched:', experience);
-
-  const education = text.match(/(bachelor|bs|ms|phd|master|mba|diploma|certificate|degree)\s*(?:in|of)?\s*[\w\s]*(?:university|college|institute|school|academy)?/gi) || [];
-  console.log('Education matched:', education);
+  // You can still use regex as a fallback or to supplement the AI data
+  const regexSkills = SKILL_LIST.filter(skill => text.toLowerCase().includes(skill));
+  const allSkills = [...new Set([...aiParsedData.skills, ...regexSkills])];
 
   const candidateName = extractCandidateName(text);
   console.log('Extracted candidate name:', candidateName);
 
   return {
-    candidateName,
-    skills: allSkills,
-    experience: experience.map(e => e.trim()),
-    education: education.map(e => e.trim()),
+    candidateName: aiParsedData.candidateName || candidateName,
+    skills: allSkills.sort(),
+    experience: aiParsedData.experience,
+    education: aiParsedData.education,
     rawText: text,
     originalFilename
   };
@@ -294,10 +311,10 @@ app.post('/api/chat', async (req, res) => {
     let responseText;
     
     if (message.toLowerCase().includes('thank you') || message.toLowerCase().includes('thanks')) {
-      responseText = "You're welcome! Do you have any questions about the next steps in our process?";
+      responseText = "You're welcome! Do you have any other questions for me?";
     }
     else if (message.toLowerCase().includes('salary') || message.toLowerCase().includes('compensation')) {
-      responseText = "Great question about compensation. Our recruiter will discuss the salary range during the follow-up call. Can you share your salary expectations?";
+      responseText = "That's a great question. Compensation details are typically discussed with a recruiter in the next stage. Is there a particular salary range you are looking for?";
     }
     else if (message.toLowerCase().includes('when') && message.toLowerCase().includes('hear')) {
       responseText = "We typically review applications within 5-7 business days. I'll make a note to prioritize your application.";
@@ -307,7 +324,7 @@ app.post('/api/chat', async (req, res) => {
       responseText = `That's great experience with ${mentionedSkill}. Can you describe a specific project where you applied this skill?`;
     }
     else if (message.toLowerCase().includes('position') || message.toLowerCase().includes('job') || message.toLowerCase().includes('role')) {
-      responseText = "This position involves working with our core technology team. What specific aspects of the role are you most interested in?";
+      responseText = "This role involves [briefly describe role]. What specific aspects of the position are you most interested in?";
     }
     else if (message.split(' ').length < 10) {
       responseText = "Could you elaborate a bit more? I'd love to understand your background in more detail.";
@@ -328,7 +345,7 @@ app.post('/api/chat', async (req, res) => {
       if (undiscussedSkills.length > 0) {
         responseText = `Thanks for sharing that. I notice you also have experience with ${undiscussedSkills[0]}. Could you tell me more about that?`;
       } else {
-        responseText = "Thank you for providing that information. Is there anything specific about the company or position you'd like to know?";
+        responseText = "Thank you for providing that information. Is there anything else you'd like to know about the company or the role?";
       }
     } else {
       responseText = "Thanks for your response. What are you looking for in your next role?";
@@ -337,18 +354,14 @@ app.post('/api/chat', async (req, res) => {
     await db.collection('candidates').updateOne(
       { _id: new ObjectId(candidateId) },
       { 
-        $push: { 
-          chatHistory: { 
-            sender: 'User', 
-            text: message, 
-            timestamp: new Date() 
-          }, 
-          chatHistory: { 
-            sender: 'AI', 
-            text: responseText, 
-            timestamp: new Date() 
-          } 
-        } 
+        $push: {
+          chatHistory: {
+            $each: [
+              { sender: 'User', text: message, timestamp: new Date() },
+              { sender: 'AI', text: responseText, timestamp: new Date() }
+            ]
+          }
+        }
       }
     );
     
