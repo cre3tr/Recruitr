@@ -182,7 +182,7 @@ async function parseResumeWithAI(text) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-3.5-turbo-1106', // This model is optimized for JSON mode and is generally more cost-effective.
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: "json_object" },
     });
@@ -203,7 +203,7 @@ async function parseResumeWithAI(text) {
   } catch (error) {
     if (error.status === 429) {
       console.error('OpenAI API quota exceeded:', error.message);
-      throw new Error('The resume parsing service is currently unavailable due to high demand. Please try again later.');
+      throw new Error('We are experiencing high traffic at the moment. Please try again in a little while.');
     }
     console.error('Error calling OpenAI API:', error);
     throw new Error('Failed to parse resume with AI.');
