@@ -468,11 +468,13 @@
 
         console.log('Response status:', response.status);
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
+        // The server now sends a more structured response on success
+        const parsedData = data.parsedData;
 
         if (data.message === 'Resume uploaded and parsed successfully') {
           state.candidateId = data.candidateId;
@@ -480,27 +482,27 @@
           localStorage.setItem('candidateId', state.candidateId);
           localStorage.setItem('candidateName', state.candidateName);
 
-          state.extractedProfile = data.parsedData;
+          state.extractedProfile = parsedData;
           localStorage.setItem('extractedProfile', JSON.stringify(state.extractedProfile));
           renderProfilePreview(state.extractedProfile);
 
           els.uploadStatus.textContent = 'Resume uploaded successfully!';
           els.uploadStatus.className = 'text-sm text-green-600';
 
-          addChatMessage('Recruitr', `Hello ${state.extractedProfile.candidateName || 'there'}! Thanks for uploading your resume.`);
+          addChatMessage('Recruitr', `Hello ${parsedData.candidateName || 'there'}! Thanks for uploading your resume.`);
 
-          if (data.parsedData.skills.length > 0) {
-            addChatMessage('Recruitr', `I see you have experience with ${data.parsedData.skills.join(', ')}.`);
-            addChatMessage('Recruitr', `Could you tell me more about your experience with ${data.parsedData.skills[0]}?`);
+          if (parsedData.skills.length > 0) {
+            addChatMessage('Recruitr', `I see you have experience with ${parsedData.skills.join(', ')}.`);
+            addChatMessage('Recruitr', `Could you tell me more about your experience with ${parsedData.skills[0]}?`);
           } else {
             addChatMessage('Recruitr', 'Could you tell me about your most recent work experience?');
           }
 
           const newCandidate = {
             id: data.candidateId,
-            name: data.parsedData.candidateName || `Candidate ${state.candidates.length + 1}`,
-            skills: data.parsedData.skills,
-            score: Math.min(100, data.parsedData.skills.length * 12),
+            name: parsedData.candidateName || `Candidate ${state.candidates.length + 1}`,
+            skills: parsedData.skills,
+            score: Math.min(100, parsedData.skills.length * 12),
             date: new Date()
           };
 
@@ -510,13 +512,13 @@
         } else {
           els.uploadStatus.textContent = `Error: ${data.error || 'Failed to upload resume.'}`;
           els.uploadStatus.className = 'text-sm text-red-600';
-          addChatMessage('Recruitr', `Error: ${data.error || 'Failed to upload resume.'}`);
+          addChatMessage('Recruitr', `Sorry, I couldn't process that resume. Please try again.`);
         }
       } catch (error) {
         console.error('Fetch error details:', error);
         els.uploadStatus.textContent = `Error: ${error.message}`;
         els.uploadStatus.className = 'text-sm text-red-600';
-        addChatMessage('Recruitr', `Error: Could not connect to server. Details: ${error.message}`);
+        addChatMessage('Recruitr', `An error occurred: ${error.message}`);
       } finally {
         hideLoading();
       }
@@ -546,13 +548,13 @@
         const data = await response.json();
 
         if (response.ok) {
-          addChatMessage('Recruitr', data.response);
+          addChatMessage('Recruitr', data.response || 'I am not sure how to respond to that.');
         } else {
-          addChatMessage('Recruitr', `Error: ${data.error || 'Failed to process message.'}`);
+          addChatMessage('Recruitr', `Sorry, I encountered an error: ${data.error || 'Failed to process message.'}`);
         }
       } catch (error) {
         console.error('Chat fetch error:', error);
-        addChatMessage('Recruitr', `Error: Could not connect to server. Details: ${error.message}`);
+        addChatMessage('Recruitr', `Sorry, I couldn't connect to the server. Please try again later.`);
       } finally {
         hideLoading();
         els.chatInput.focus();
@@ -660,7 +662,7 @@
         const candidate = data.candidate;
 
         els.detailName.textContent = candidate.parsedData.candidateName || 'Candidate Details';
-
+        
         els.detailSkills.innerHTML = '';
         (candidate.parsedData.skills || []).forEach(skill => {
           const skillBadge = document.createElement('span');
@@ -701,7 +703,7 @@
         if (candidate.chatHistory && candidate.chatHistory.length > 0) {
           candidate.chatHistory.forEach(msg => {
             const msgDiv = document.createElement('div');
-            msgDiv.className = `mb-2 p-2 rounded ${msg.sender === 'AI' ? 'bg-blue-100' : 'bg-green-100 ml-4'}`;
+            msgDiv.className = `mb-2 p-2 rounded ${msg.sender === 'Recruitr' ? 'bg-blue-100' : 'bg-green-100 ml-4'}`;
             msgDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
             els.detailChatHistory.appendChild(msgDiv);
           });
