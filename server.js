@@ -15,9 +15,10 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Environment Variable Validation
-const { MONGODB_URI, SESSION_SECRET, OPENAI_API_KEY, RECRUITER_USER, RECRUITER_PASS_HASH } = process.env;
-if (!MONGODB_URI || !SESSION_SECRET || !OPENAI_API_KEY || !RECRUITER_USER || !RECRUITER_PASS_HASH) {
-  console.error('FATAL ERROR: Missing one or more required environment variables (MONGODB_URI, SESSION_SECRET, OPENAI_API_KEY, RECRUITER_USER, RECRUITER_PASS_HASH)');
+const requiredEnvVars = ['MONGODB_URI', 'SESSION_SECRET', 'OPENAI_API_KEY', 'RECRUITER_USER', 'RECRUITER_PASS_HASH', 'FRONTEND_URL'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error(`FATAL ERROR: Missing required environment variables: ${missingEnvVars.join(', ')}`);
   process.exit(1);
 }
 
@@ -56,7 +57,7 @@ async function connectToMongoDB() {
 // Middleware
 app.use(cors({
   // Ensure FRONTEND_URL is set to https://recruitr.onrender.com in Render's environment variables
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL, // Use the variable from .env
   credentials: true
 }));
 app.use(express.json());
@@ -70,11 +71,14 @@ connectToMongoDB().then(() => {
     store: MongoStore.create({
       client: mongoClient,
       dbName: 'recruitr',
-      collectionName: 'sessions',
-      ttl: 14 * 24 * 60 * 60 // 14 days
+      collectionName: 'sessions'
     }),
-    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' }
   }));
+  // Start the server only after the database and session store are ready
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 }).catch(err => {
   console.error("Failed to connect to MongoDB and set up session store. Exiting.", err);
   process.exit(1);
@@ -111,6 +115,17 @@ app.get('/api/verify-session', (req, res) => {
     return res.json({ success: true, username: req.session.user.username });
   }
   res.status(401).json({ error: 'Not authenticated' });
+});
+
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ error: 'Could not log out, please try again.' });
+    }
+    res.clearCookie('connect.sid'); // The default name for express-session cookie
+    res.status(200).json({ message: 'Logged out successfully' });
+  });
 });
 
 function requireAuth(req, res, next) {
@@ -398,16 +413,18 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: db ? 'OK' : 'Database not connected' });
 });
 
-// Start the server regardless of MongoDB connection status
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+const gracefulShutdown = (signal) => {
+  console.log(`${signal} received. Closing connections...`);
+  if (mongoClient) {
+    mongoClient.close().then(() => {
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
 
 // Handle process termination gracefully
-process.on('SIGTERM', async () => {
-  console.log('Received SIGTERM. Closing MongoDB connection...');
-  if (mongoClient) {
-    await mongoClient.close();
-  }
-  process.exit(0);
-});
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
