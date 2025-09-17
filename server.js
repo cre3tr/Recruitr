@@ -167,21 +167,23 @@ const openai = new OpenAI({
 });
 
 async function parseResumeWithAI(text) {
-  const messages = [
-    {
-      role: 'system',
-      content: 'You are a helpful assistant designed to output JSON. Extract key information from the provided resume text.'
-    },
-    {
-      role: 'user',
-      content: `From the following resume text, extract the candidate's name, a list of their skills, a summary of their work experience, and a summary of their education. Respond with a JSON object with the keys "candidateName", "skills", "experience", and "education".\n\nResume Text:\n---\n${text}\n---`
-    }
-  ];
+  const prompt = `
+    From the following resume text, extract the candidate's name, a list of their skills, a summary of their work experience, and a summary of their education.
+    Format the output as a JSON object with keys: "candidateName", "skills", "experience", "education".
+    The "skills" value should be an array of strings.
+    The "experience" value should be an array of strings, with each string representing a job or project.
+    The "education" value should be an array of strings, with each string representing a degree or certification.
+
+    Resume Text:
+    ---
+    ${text}
+    ---
+  `;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo-1106', // This model is optimized for JSON mode
-      messages: messages,
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
       response_format: { type: "json_object" },
     });
 
@@ -189,9 +191,20 @@ async function parseResumeWithAI(text) {
     if (!content) {
       throw new Error('OpenAI returned an empty response.');
     }
+
     const parsedData = JSON.parse(content);
+    
+    // Basic validation of the parsed data structure
+    if (!parsedData.candidateName || !Array.isArray(parsedData.skills) || !Array.isArray(parsedData.experience) || !Array.isArray(parsedData.education)) {
+      throw new Error('OpenAI returned a malformed JSON object.');
+    }
+
     return parsedData;
   } catch (error) {
+    if (error.status === 429) {
+      console.error('OpenAI API quota exceeded:', error.message);
+      throw new Error('The resume parsing service is currently unavailable due to high demand. Please try again later.');
+    }
     console.error('Error calling OpenAI API:', error);
     throw new Error('Failed to parse resume with AI.');
   }
