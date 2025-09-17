@@ -15,9 +15,11 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Environment Variable Validation
+const { MONGODB_URI, SESSION_SECRET, OPENAI_API_KEY, RECRUITER_USER, RECRUITER_PASS_HASH, FRONTEND_URL } = process.env; // Destructure for cleaner code
 const requiredEnvVars = ['MONGODB_URI', 'SESSION_SECRET', 'OPENAI_API_KEY', 'RECRUITER_USER', 'RECRUITER_PASS_HASH', 'FRONTEND_URL'];
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
+  // Make the error message more specific for easier debugging on Render
   console.error(`FATAL ERROR: Missing required environment variables: ${missingEnvVars.join(', ')}`);
   process.exit(1);
 }
@@ -56,29 +58,37 @@ async function connectToMongoDB() {
 
 // Middleware
 app.use(cors({
-  // Ensure FRONTEND_URL is set to https://recruitr.onrender.com in Render's environment variables
-  origin: process.env.FRONTEND_URL, // Use the variable from .env
+  origin: FRONTEND_URL,
   credentials: true
 }));
+
 app.use(express.json());
 
 // Initialize session middleware after the database is connected
 connectToMongoDB().then(() => {
   app.use(session({
+    name: 'recruitr.sid', // Give the session cookie a unique name
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       client: mongoClient,
       dbName: 'recruitr',
-      collectionName: 'sessions'
+      collectionName: 'sessions',
+      ttl: 14 * 24 * 60 * 60 // 14 days
     }),
     cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true, maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' }
   }));
+
   // Start the server only after the database and session store are ready
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
   });
+
+  // Handle process termination gracefully
+  process.on('SIGINT', () => gracefulShutdown(server, 'SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown(server, 'SIGTERM'));
+
 }).catch(err => {
   console.error("Failed to connect to MongoDB and set up session store. Exiting.", err);
   process.exit(1);
@@ -120,10 +130,11 @@ app.get('/api/verify-session', (req, res) => {
 app.post('/api/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error('Logout error:', err);
+      console.error('Logout error:', err); // Log the error for debugging
       return res.status(500).json({ error: 'Could not log out, please try again.' });
     }
-    res.clearCookie('connect.sid'); // The default name for express-session cookie
+    // The default cookie name is 'connect.sid', but we've named ours 'recruitr.sid'
+    res.clearCookie('recruitr.sid');
     res.status(200).json({ message: 'Logged out successfully' });
   });
 });
@@ -360,7 +371,7 @@ app.post('/api/chat', async (req, res) => {
       if (undiscussedSkills.length > 0) {
         responseText = `Thanks for sharing that. I notice you also have experience with ${undiscussedSkills[0]}. Could you tell me more about that?`;
       } else {
-        responseText = "Thank you for providing that information. Is there anything else you'd like to know about the company or the role?";
+        responseText = "Thank you for the details. What would you say is your greatest strength as a professional?";
       }
     } else {
       responseText = "Thanks for your response. What are you looking for in your next role?";
@@ -413,18 +424,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: db ? 'OK' : 'Database not connected' });
 });
 
-const gracefulShutdown = (signal) => {
+const gracefulShutdown = (server, signal) => {
   console.log(`${signal} received. Closing connections...`);
-  if (mongoClient) {
-    mongoClient.close().then(() => {
-      console.log('MongoDB connection closed.');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    if (mongoClient) {
+      mongoClient.close().then(() => {
+        console.log('MongoDB connection closed.');
+        process.exit(0);
+      });
+    } else {
       process.exit(0);
-    });
-  } else {
-    process.exit(0);
-  }
+    }
+  });
 };
-
-// Handle process termination gracefully
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

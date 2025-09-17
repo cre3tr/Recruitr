@@ -177,6 +177,631 @@
       background-color: #9CA3AF; /* gray-400 */
     }
   </style>
-  <script src="app.js"></script>
+  <script>
+    // Define the backend URL
+    // This should match your Render backend service URL (e.g., https://recruitr-backend.onrender.com)
+    const BACKEND_URL = 'https://recruitr-backend.onrender.com';
+
+    // State Management
+    const state = {
+      view: localStorage.getItem('view') || 'candidate',
+      isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
+      candidateId: localStorage.getItem('candidateId') || null,
+      candidateName: localStorage.getItem('candidateName') || null,
+      candidates: JSON.parse(localStorage.getItem('candidates')) || [],
+      chatMessages: JSON.parse(localStorage.getItem('chatMessages')) || [
+        { sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }
+      ],
+      extractedProfile: JSON.parse(localStorage.getItem('extractedProfile')) || null,
+      backendAvailable: true // Track backend availability
+    };
+
+    // DOM Elements
+    const els = {
+      backendStatusBanner: document.getElementById('backend-status-banner'),
+      candidateViewBtn: document.getElementById('candidate-view-btn'),
+      recruiterViewBtn: document.getElementById('recruiter-view-btn'),
+      logoutBtn: document.getElementById('logout-btn'),
+      candidateView: document.getElementById('candidate-view'),
+      recruiterView: document.getElementById('recruiter-view'),
+      chatBox: document.getElementById('chat-box'),
+      resumeInput: document.getElementById('resume-input'),
+      chatInput: document.getElementById('chat-input'),
+      sendBtn: document.getElementById('send-btn'),
+      clearChatBtn: document.getElementById('clear-chat-btn'),
+      candidateTableBody: document.getElementById('candidate-table-body'),
+      loadingIndicator: document.getElementById('loading-indicator'),
+      loginModal: document.getElementById('login-modal'),
+      loginSubmitBtn: document.getElementById('login-submit-btn'),
+      loginCancelBtn: document.getElementById('login-cancel-btn'),
+      usernameInput: document.getElementById('username-input'),
+      passwordInput: document.getElementById('password-input'),
+      profilePreview: document.getElementById('profile-preview'),
+      profileContent: document.getElementById('profile-content'),
+      uploadStatus: document.getElementById('upload-status'),
+      candidateDetailModal: document.getElementById('candidate-detail-modal'),
+      detailName: document.getElementById('detail-name'),
+      detailSkills: document.getElementById('detail-skills'),
+      detailExperience: document.getElementById('detail-experience'),
+      detailEducation: document.getElementById('detail-education'),
+      detailChatHistory: document.getElementById('detail-chat-history'),
+      detailCloseBtn: document.getElementById('detail-close-btn'),
+      searchInput: document.getElementById('search-input'),
+      sortSelect: document.getElementById('sort-select'),
+      applyFiltersBtn: document.getElementById('apply-filters-btn')
+    };
+
+    // Show loading indicator
+    function showLoading() {
+      els.loadingIndicator.classList.remove('hidden');
+    }
+
+    // Hide loading indicator
+    function hideLoading() {
+      els.loadingIndicator.classList.add('hidden');
+    }
+
+    // Helper to add chat message
+    function addChatMessage(sender, text) {
+      state.chatMessages.push({ sender, text, timestamp: new Date() });
+      localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
+      renderChatMessages();
+    }
+
+    // Render chat messages with improved styling
+    function renderChatMessages() {
+      els.chatBox.innerHTML = '';
+      state.chatMessages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-3 p-2 rounded-lg ${msg.sender === 'Recruitr' ? 'bg-blue-100' : 'bg-green-100 ml-8'}`;
+        messageDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+        els.chatBox.appendChild(messageDiv);
+      });
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    }
+
+    // Render profile preview
+    function renderProfilePreview(profileData) {
+      if (!profileData) return;
+
+      els.profilePreview.classList.remove('hidden');
+      els.profileContent.innerHTML = '';
+
+      const nameDiv = document.createElement('div');
+      nameDiv.innerHTML = `
+        <h3 class="font-semibold">Name</h3>
+        <p>${profileData.candidateName || 'Unknown'}</p>
+      `;
+      els.profileContent.appendChild(nameDiv);
+
+      const skillsDiv = document.createElement('div');
+      skillsDiv.innerHTML = `
+        <h3 class="font-semibold">Skills</h3>
+        <div class="flex flex-wrap gap-1 mt-1">
+          ${profileData.skills.map(skill =>
+            `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
+          ).join('')}
+        </div>
+      `;
+      els.profileContent.appendChild(skillsDiv);
+
+      if (profileData.experience && profileData.experience.length > 0) {
+        const expDiv = document.createElement('div');
+        expDiv.innerHTML = `
+          <h3 class="font-semibold">Experience</h3>
+          <ul class="list-disc pl-5 mt-1">
+            ${profileData.experience.slice(0, 2).map(exp => `<li>${exp}</li>`).join('')}
+            ${profileData.experience.length > 2 ? '<li>...</li>' : ''}
+          </ul>
+        `;
+        els.profileContent.appendChild(expDiv);
+      }
+
+      if (profileData.education && profileData.education.length > 0) {
+        const eduDiv = document.createElement('div');
+        eduDiv.innerHTML = `
+          <h3 class="font-semibold">Education</h3>
+          <ul class="list-disc pl-5 mt-1">
+            ${profileData.education.slice(0, 2).map(edu => `<li>${edu}</li>`).join('')}
+            ${profileData.education.length > 2 ? '<li>...</li>' : ''}
+          </ul>
+        `;
+        els.profileContent.appendChild(eduDiv);
+      }
+    }
+
+    // Clear chat
+    els.clearChatBtn.addEventListener('click', () => {
+      state.chatMessages = [{ sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
+      localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
+      renderChatMessages();
+    });
+
+    // Switch views with authentication check
+    function switchView(view) {
+      state.view = view;
+      localStorage.setItem('view', state.view);
+
+      const isCandidateView = view === 'candidate';
+      els.candidateView.classList.toggle('hidden', !isCandidateView);
+      els.recruiterView.classList.toggle('hidden', isCandidateView);
+
+      els.candidateViewBtn.classList.toggle('active', isCandidateView);
+      els.candidateViewBtn.classList.toggle('inactive', !isCandidateView);
+      els.recruiterViewBtn.classList.toggle('active', !isCandidateView);
+      els.recruiterViewBtn.classList.toggle('inactive', isCandidateView);
+
+      if (isCandidateView) {
+        renderChatMessages();
+        if (state.extractedProfile) {
+          renderProfilePreview(state.extractedProfile);
+        }
+      } else {
+        updateRecruiterTable();
+      }
+    }
+
+    els.candidateViewBtn.addEventListener('click', () => switchView('candidate'));
+
+    els.recruiterViewBtn.addEventListener('click', () => {
+      if (!state.isLoggedIn) {
+        els.loginModal.classList.remove('hidden');
+        return;
+      }
+      switchView('recruiter');
+    });
+
+    // Login modal functionality
+    els.loginCancelBtn.addEventListener('click', () => {
+      els.loginModal.classList.add('hidden');
+    });
+
+    els.loginSubmitBtn.addEventListener('click', async () => {
+      const username = els.usernameInput.value.trim();
+      const password = els.passwordInput.value;
+
+      if (!username || !password) {
+        alert('Please enter both username and password');
+        return;
+      }
+
+      showLoading();
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          state.isLoggedIn = true;
+          localStorage.setItem('isLoggedIn', 'true');
+          els.loginModal.classList.add('hidden');
+          switchView('recruiter');
+        } else {
+          alert(`Login failed: ${data.error || 'Invalid credentials'}`);
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert(`Login failed: ${error.message}`);
+      } finally {
+        hideLoading();
+      }
+    });
+
+    // Logout functionality
+    els.logoutBtn.addEventListener('click', async () => {
+      showLoading();
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          // Clear local state
+          state.isLoggedIn = false;
+          state.candidateId = null;
+          state.candidateName = null;
+          state.candidates = [];
+          state.extractedProfile = null;
+          state.chatMessages = [{ sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
+
+          // Clear localStorage
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('candidateId');
+          localStorage.removeItem('candidateName');
+          localStorage.removeItem('candidates');
+          localStorage.removeItem('extractedProfile');
+          localStorage.removeItem('chatMessages');
+
+          // Switch to candidate view
+          switchView('candidate');
+        } else {
+          const data = await response.json();
+          alert(`Logout failed: ${data.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+        alert(`Logout failed: ${error.message}`);
+      } finally {
+        hideLoading();
+      }
+    });
+
+    // Handle resume upload with enhanced feedback and detailed error logging
+    els.resumeInput.addEventListener('change', async (e) => {
+      e.preventDefault();
+      const file = e.target.files[0];
+      if (!file) {
+        els.uploadStatus.textContent = 'No file selected.';
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        els.uploadStatus.textContent = 'File too large. Maximum size is 5MB.';
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop().toLowerCase();
+      if (fileExt !== 'pdf' && fileExt !== 'docx') {
+        els.uploadStatus.textContent = 'Only PDF and DOCX files are allowed.';
+        return;
+      }
+
+      els.uploadStatus.textContent = 'Uploading...';
+      showLoading();
+
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      try {
+        console.log('Sending resume upload request to server...');
+        const response = await fetch(`${BACKEND_URL}/api/upload-resume`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.message === 'Resume uploaded and parsed successfully') {
+          state.candidateId = data.candidateId;
+          state.candidateName = data.parsedData.candidateName || 'Candidate';
+          localStorage.setItem('candidateId', state.candidateId);
+          localStorage.setItem('candidateName', state.candidateName);
+
+          state.extractedProfile = data.parsedData;
+          localStorage.setItem('extractedProfile', JSON.stringify(state.extractedProfile));
+          renderProfilePreview(state.extractedProfile);
+
+          els.uploadStatus.textContent = 'Resume uploaded successfully!';
+          els.uploadStatus.className = 'text-sm text-green-600';
+
+          addChatMessage('Recruitr', `Hello ${state.extractedProfile.candidateName || 'there'}! Thanks for uploading your resume.`);
+
+          if (data.parsedData.skills.length > 0) {
+            addChatMessage('Recruitr', `I see you have experience with ${data.parsedData.skills.join(', ')}.`);
+            addChatMessage('Recruitr', `Could you tell me more about your experience with ${data.parsedData.skills[0]}?`);
+          } else {
+            addChatMessage('Recruitr', 'Could you tell me about your most recent work experience?');
+          }
+
+          const newCandidate = {
+            id: data.candidateId,
+            name: data.parsedData.candidateName || `Candidate ${state.candidates.length + 1}`,
+            skills: data.parsedData.skills,
+            score: Math.min(100, data.parsedData.skills.length * 12),
+            date: new Date()
+          };
+
+          state.candidates.push(newCandidate);
+          localStorage.setItem('candidates', JSON.stringify(state.candidates));
+          updateRecruiterTable();
+        } else {
+          els.uploadStatus.textContent = `Error: ${data.error || 'Failed to upload resume.'}`;
+          els.uploadStatus.className = 'text-sm text-red-600';
+          addChatMessage('Recruitr', `Error: ${data.error || 'Failed to upload resume.'}`);
+        }
+      } catch (error) {
+        console.error('Fetch error details:', error);
+        els.uploadStatus.textContent = `Error: ${error.message}`;
+        els.uploadStatus.className = 'text-sm text-red-600';
+        addChatMessage('Recruitr', `Error: Could not connect to server. Details: ${error.message}`);
+      } finally {
+        hideLoading();
+      }
+    });
+
+    // Handle chat message
+    els.sendBtn.addEventListener('click', async () => {
+      const message = els.chatInput.value.trim();
+      if (!message) return;
+
+      if (!state.candidateId) {
+        addChatMessage('Recruitr', 'Please upload your resume first before we can chat.');
+        return;
+      }
+
+      addChatMessage('User', message);
+      els.chatInput.value = '';
+
+      showLoading();
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidateId: state.candidateId, message })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          addChatMessage('Recruitr', data.response);
+        } else {
+          addChatMessage('Recruitr', `Error: ${data.error || 'Failed to process message.'}`);
+        }
+      } catch (error) {
+        console.error('Chat fetch error:', error);
+        addChatMessage('Recruitr', `Error: Could not connect to server. Details: ${error.message}`);
+      } finally {
+        hideLoading();
+        els.chatInput.focus();
+      }
+    });
+
+    // Update recruiter table with filtering and sorting
+    function updateRecruiterTable() {
+      if (!state.isLoggedIn) return;
+
+      const searchTerm = els.searchInput.value.toLowerCase();
+      const sortOption = els.sortSelect.value;
+
+      let filteredCandidates = [...state.candidates];
+
+      if (searchTerm) {
+        filteredCandidates = filteredCandidates.filter(candidate =>
+          candidate.name.toLowerCase().includes(searchTerm) ||
+          (candidate.skills && candidate.skills.some(skill => skill.toLowerCase().includes(searchTerm)))
+        );
+      }
+
+      filteredCandidates.sort((a, b) => {
+        switch(sortOption) {
+          case 'score-desc':
+            return b.score - a.score;
+          case 'score-asc':
+            return a.score - b.score;
+          case 'date-desc':
+            return new Date(b.date) - new Date(a.date);
+          case 'date-asc':
+            return new Date(a.date) - new Date(b.date);
+          default:
+            return b.score - a.score;
+        }
+      });
+
+      els.candidateTableBody.innerHTML = '';
+
+      if (filteredCandidates.length === 0) {
+        els.candidateTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="p-4 text-center text-gray-500">No candidates match your criteria</td>
+          </tr>
+        `;
+        return;
+      }
+
+      filteredCandidates.forEach(candidate => {
+        const row = document.createElement('tr');
+        row.className = 'border-t hover:bg-gray-50';
+
+        const date = candidate.date ? new Date(candidate.date) : new Date();
+        const dateStr = date.toLocaleDateString();
+
+        row.innerHTML = `
+          <td class="p-2">${candidate.name}</td>
+          <td class="p-2">
+            <div class="flex flex-wrap gap-1">
+              ${(candidate.skills || []).slice(0, 3).map(skill =>
+                `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
+              ).join('')}
+              ${(candidate.skills || []).length > 3 ? `<span class="text-xs">+${candidate.skills.length - 3} more</span>` : ''}
+            </div>
+          </td>
+          <td class="p-2 text-center">
+            <div class="inline-flex items-center">
+              <div class="w-12 bg-gray-200 rounded-full h-2 mr-2">
+                <div class="bg-blue-600 h-2 rounded-full" style="width: ${candidate.score}%"></div>
+              </div>
+              <span>${candidate.score}%</span>
+            </div>
+          </td>
+          <td class="p-2 text-center">${dateStr}</td>
+          <td class="p-2 text-center">
+            <button class="view-details-btn bg-blue-500 text-white py-1 px-2 rounded text-sm"
+                    data-id="${candidate.id}">View Details</button>
+          </td>
+        `;
+        els.candidateTableBody.appendChild(row);
+      });
+
+      document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const candidateId = btn.getAttribute('data-id');
+          await showCandidateDetails(candidateId);
+        });
+      });
+    }
+
+    // Show candidate details
+    async function showCandidateDetails(candidateId) {
+      showLoading();
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/candidates/${candidateId}`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const candidate = data.candidate;
+
+        els.detailName.textContent = candidate.parsedData.candidateName || 'Candidate Details';
+
+        els.detailSkills.innerHTML = '';
+        (candidate.parsedData.skills || []).forEach(skill => {
+          const skillBadge = document.createElement('span');
+          skillBadge.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+          skillBadge.textContent = skill;
+          els.detailSkills.appendChild(skillBadge);
+        });
+
+        els.detailExperience.innerHTML = '';
+        if (candidate.parsedData.experience && candidate.parsedData.experience.length > 0) {
+          const expList = document.createElement('ul');
+          expList.className = 'list-disc pl-5';
+          candidate.parsedData.experience.forEach(exp => {
+            const li = document.createElement('li');
+            li.textContent = exp;
+            expList.appendChild(li);
+          });
+          els.detailExperience.appendChild(expList);
+        } else {
+          els.detailExperience.textContent = 'No experience information extracted';
+        }
+
+        els.detailEducation.innerHTML = '';
+        if (candidate.parsedData.education && candidate.parsedData.education.length > 0) {
+          const eduList = document.createElement('ul');
+          eduList.className = 'list-disc pl-5';
+          candidate.parsedData.education.forEach(edu => {
+            const li = document.createElement('li');
+            li.textContent = edu;
+            eduList.appendChild(li);
+          });
+          els.detailEducation.appendChild(eduList);
+        } else {
+          els.detailEducation.textContent = 'No education information extracted';
+        }
+
+        els.detailChatHistory.innerHTML = '';
+        if (candidate.chatHistory && candidate.chatHistory.length > 0) {
+          candidate.chatHistory.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `mb-2 p-2 rounded ${msg.sender === 'AI' ? 'bg-blue-100' : 'bg-green-100 ml-4'}`;
+            msgDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+            els.detailChatHistory.appendChild(msgDiv);
+          });
+        } else {
+          els.detailChatHistory.textContent = 'No chat history available';
+        }
+
+        els.candidateDetailModal.classList.remove('hidden');
+
+      } catch (error) {
+        console.error('Error fetching candidate details:', error);
+        alert(`Error loading candidate details: ${error.message}`);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // Close candidate detail modal
+    els.detailCloseBtn.addEventListener('click', () => {
+      els.candidateDetailModal.classList.add('hidden');
+    });
+
+    // Apply filters button
+    els.applyFiltersBtn.addEventListener('click', () => {
+      updateRecruiterTable();
+    });
+
+    // Enter key in chat input
+    els.chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        els.sendBtn.click();
+      }
+    });
+
+    // Enter key in search input
+    els.searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        els.applyFiltersBtn.click();
+      }
+    });
+
+    // Check backend availability
+    async function checkBackendAvailability() {
+      try {
+        const response = await fetch(`${BACKEND_URL}/health`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        state.backendAvailable = data.status === 'OK';
+      } catch (error) {
+        console.warn('Could not connect to backend:', error);
+        state.backendAvailable = false;
+      }
+
+      if (!state.backendAvailable) {
+        els.backendStatusBanner.classList.remove('hidden');
+      } else {
+        els.backendStatusBanner.classList.add('hidden');
+      }
+    }
+
+    // Initial setup
+    (function init() {
+      checkBackendAvailability().then(() => {
+        if (state.isLoggedIn) {
+          fetch(`${BACKEND_URL}/api/verify-session`, {
+            credentials: 'include'
+          })
+          .then(response => {
+            if (!response.ok) {
+              state.isLoggedIn = false;
+              localStorage.setItem('isLoggedIn', 'false');
+              if (state.view === 'recruiter') {
+                switchView('candidate');
+              }
+            }
+          })
+          .catch(() => {
+            console.warn('Could not verify session with server.');
+          });
+        }
+
+        if (state.view === 'candidate') {
+          switchView('candidate');
+        } else if (state.view === 'recruiter' && state.isLoggedIn) {
+          switchView('recruiter');
+        } else {
+          switchView('candidate');
+        }
+
+        if (state.extractedProfile && state.view === 'candidate') {
+          renderProfilePreview(state.extractedProfile);
+        }
+
+        console.log('Recruitr app initialized');
+      });
+    })();
+  </script>
 </body>
 </html>
