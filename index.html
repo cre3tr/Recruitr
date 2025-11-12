@@ -7,182 +7,356 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes pulse-subtle {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.8; }
+      }
+      
+      .animate-slide-in {
+        animation: slideInUp 0.5s ease-out;
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+      
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      .chat-message {
+        animation: slideInUp 0.3s ease-out;
+      }
+      
+      .typing-indicator {
+        animation: pulse-subtle 1.5s ease-in-out infinite;
+      }
+      
+      .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      
+      .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      
+      .skill-badge {
+        transition: all 0.2s ease;
+      }
+      
+      .skill-badge:hover {
+        transform: scale(1.05);
+      }
+      
+      .progress-ring {
+        transition: stroke-dashoffset 0.5s ease;
+      }
+      
+      .floating {
+        animation: floating 3s ease-in-out infinite;
+      }
+      
+      @keyframes floating {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      .file-upload-zone {
+        transition: all 0.3s ease;
+      }
+      
+      .file-upload-zone.dragover {
+        background: #f0f4ff;
+        border-color: #667eea;
+        transform: scale(1.02);
+      }
+      
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #667eea;
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: #764ba2;
+      }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
   <div id="app">
     <!-- Backend Status Banner -->
-    <div id="backend-status-banner" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 hidden">
-      <p>Warning: The backend server is currently unavailable. Some features (like resume upload and login) may not work. Please try again later.</p>
+    <div id="backend-status-banner" class="bg-red-500 text-white p-4 text-center hidden animate-fade-in">
+      <p class="font-medium">⚠️ Backend server unavailable. Some features may not work.</p>
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-      <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Recruiter Login</h2>
-        <input id="username-input" type="text" placeholder="Username" class="w-full border border-gray-300 p-3 mb-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <input id="password-input" type="password" placeholder="Password" class="w-full border border-gray-300 p-3 mb-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <div class="flex justify-end space-x-4">
-          <button id="login-cancel-btn" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
-          <button id="login-submit-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Login</button>
+    <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+      <div class="glass-effect p-8 rounded-2xl shadow-2xl w-full max-w-md animate-slide-in">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800">Recruiter Login</h2>
+          <p class="text-gray-600 mt-2">Access your candidate dashboard</p>
+        </div>
+        <input id="username-input" type="text" placeholder="Username" class="w-full border-2 border-gray-200 p-3 mb-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+        <input id="password-input" type="password" placeholder="Password" class="w-full border-2 border-gray-200 p-3 mb-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition">
+        <div class="flex gap-3">
+          <button id="login-cancel-btn" class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition font-medium">Cancel</button>
+          <button id="login-submit-btn" class="flex-1 gradient-bg text-white py-3 px-4 rounded-lg hover:opacity-90 transition font-medium shadow-lg">Login</button>
         </div>
       </div>
     </div>
 
     <!-- Main Navigation -->
-    <nav class="bg-white shadow-sm p-3">
-      <div class="container mx-auto flex justify-between items-center">
-        <div class="text-2xl font-bold">Recruitr</div>
-        <div class="flex">
-          <button id="candidate-view-btn" class="mr-3 py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Candidate View</button>
-          <button id="recruiter-view-btn" class="py-3 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Recruiter View</button>
+    <nav class="glass-effect shadow-lg sticky top-0 z-40 border-b border-gray-200">
+      <div class="container mx-auto px-6 py-4">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center shadow-lg">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <span class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Recruitr</span>
+          </div>
+          <div class="flex gap-3">
+            <button id="candidate-view-btn" class="px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md">
+              <span class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Candidate
+              </span>
+            </button>
+            <button id="recruiter-view-btn" class="px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md">
+              <span class="flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Recruiter
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Loading Indicator -->
-    <div id="loading-indicator" class="fixed top-0 inset-x-0 bg-blue-500 h-1 hidden">
-      <div class="bg-white h-full w-1/3 animate-pulse"></div>
+    <div id="loading-indicator" class="fixed top-0 inset-x-0 h-1 bg-purple-600 hidden z-50">
+      <div class="h-full w-1/3 bg-white animate-pulse"></div>
     </div>
 
     <!-- Candidate View -->
-    <div id="candidate-view" class="max-w-4xl mx-auto p-6 mt-8">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800">Candidate Portal</h1>
-
-      <!-- Resume Upload Section -->
-      <div class="mb-8 p-6 border border-gray-200 rounded-lg bg-white">
-        <h2 class="text-xl font-semibold mb-3 text-gray-700">Upload Your Resume</h2>
-        <p class="text-gray-500 mb-4">PDF or DOCX format (max 5MB)</p>
-        <input id="resume-input" type="file" accept=".pdf,.docx" class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-        <div id="upload-status" class="text-sm text-gray-600 mt-2"></div>
+    <div id="candidate-view" class="max-w-6xl mx-auto p-6 mt-8">
+      <div class="text-center mb-12 animate-slide-in">
+        <h1 class="text-5xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">Welcome to Recruitr</h1>
+        <p class="text-xl text-gray-600">Upload your resume and start your journey</p>
       </div>
 
-      <!-- Profile Preview after upload -->
-      <div id="profile-preview" class="mb-8 p-6 border border-gray-200 rounded-lg bg-white hidden">
-        <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Profile</h2>
-        <div id="profile-content" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <!-- Resume Upload Section -->
+      <div class="mb-8 p-8 glass-effect rounded-2xl shadow-xl hover-lift animate-slide-in">
+        <div class="text-center">
+          <div class="w-20 h-20 gradient-bg rounded-full mx-auto mb-4 flex items-center justify-center floating">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Upload Your Resume</h2>
+          <p class="text-gray-600 mb-6">PDF or DOCX format, maximum 5MB</p>
+          
+          <div id="upload-zone" class="file-upload-zone border-3 border-dashed border-gray-300 rounded-xl p-8 bg-white cursor-pointer hover:border-purple-400 transition">
+            <input id="resume-input" type="file" accept=".pdf,.docx" class="hidden">
+            <label for="resume-input" class="cursor-pointer">
+              <div class="flex flex-col items-center">
+                <svg class="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span class="text-lg font-medium text-gray-700">Click to upload or drag and drop</span>
+                <span class="text-sm text-gray-500 mt-2">PDF or DOCX (max 5MB)</span>
+              </div>
+            </label>
+          </div>
+          
+          <div id="upload-status" class="text-sm mt-4 font-medium"></div>
+        </div>
+      </div>
+
+      <!-- Profile Preview -->
+      <div id="profile-preview" class="mb-8 p-8 glass-effect rounded-2xl shadow-xl hidden animate-slide-in">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Your Profile
+        </h2>
+        <div id="profile-content" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
       </div>
 
       <!-- Chat Section -->
-      <div class="mb-4 bg-white p-6 rounded-lg border border-gray-200">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold text-gray-700">Chat with Recruitr</h2>
-          <button id="clear-chat-btn" class="py-1 px-3 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">Clear Chat</button>
+      <div class="glass-effect p-8 rounded-2xl shadow-xl animate-slide-in">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            Chat with Recruitr
+          </h2>
+          <button id="clear-chat-btn" class="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium shadow-md hover-lift">
+            Clear Chat
+          </button>
         </div>
-        <div id="chat-box" class="border rounded-lg p-4 h-96 overflow-y-auto mb-4 bg-gray-50/50">
-          <div class="mb-3 p-2 bg-blue-100 rounded-lg"><strong>Recruitr:</strong> Welcome to Recruitr! Please upload your resume to start.</div>
+        
+        <div id="chat-box" class="border border-gray-200 rounded-xl p-6 h-96 overflow-y-auto mb-6 bg-gradient-to-b from-white to-gray-50">
+          <div class="chat-message mb-4 p-4 bg-purple-100 rounded-lg shadow-sm">
+            <strong class="text-purple-700">Recruitr:</strong>
+            <span class="text-gray-800"> Welcome to Recruitr! Please upload your resume to start.</span>
+          </div>
         </div>
-        <div class="flex">
-          <input id="chat-input" type="text" class="flex-1 border border-gray-300 p-3 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type your response...">
-          <button id="send-btn" class="bg-blue-600 text-white py-3 px-4 rounded-r-md hover:bg-blue-700 transition-colors">Send</button>
+        
+        <div class="flex gap-3">
+          <input id="chat-input" type="text" class="flex-1 border-2 border-gray-200 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition" placeholder="Type your message...">
+          <button id="send-btn" class="gradient-bg text-white px-8 py-4 rounded-xl hover:opacity-90 transition font-medium shadow-lg hover-lift flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            Send
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Recruiter View (Full Width) -->
+    <!-- Recruiter View -->
     <div id="recruiter-view" class="container mx-auto p-6 mt-8 hidden">
-      <h1 class="text-3xl font-bold mb-6 text-gray-800">Recruiter Dashboard</h1>
+      <div class="mb-8 animate-slide-in">
+        <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">Recruiter Dashboard</h1>
+        <p class="text-gray-600 text-lg">Manage and review candidates</p>
+      </div>
 
       <!-- Filters -->
-      <div class="mb-6 p-4 border rounded-lg bg-white">
-        <div class="flex flex-wrap gap-4 items-center">
-          <input id="search-input" type="text" placeholder="Search candidates..." class="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <select id="sort-select" class="border border-gray-300 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <div class="mb-6 p-6 glass-effect rounded-2xl shadow-lg animate-slide-in">
+        <div class="flex flex-wrap gap-4 items-center mb-4">
+          <div class="flex-1 min-w-[250px]">
+            <input id="search-input" type="text" placeholder="Search candidates..." class="w-full border-2 border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+          </div>
+          <select id="sort-select" class="border-2 border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition bg-white">
             <option value="score-desc">Highest Match</option>
             <option value="score-asc">Lowest Match</option>
             <option value="date-desc">Newest First</option>
             <option value="date-asc">Oldest First</option>
           </select>
-          <button id="apply-filters-btn" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Apply</button>
+          <button id="apply-filters-btn" class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 transition font-medium shadow-lg hover-lift">
+            Apply Filters
+          </button>
         </div>
-        <div class="mt-4">
-          <button id="logout-btn" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors">Logout</button>
+        <div>
+          <button id="logout-btn" class="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition font-medium shadow-md hover-lift">
+            Logout
+          </button>
         </div>
       </div>
 
-      <!-- Candidate Table -->
-      <div class="overflow-x-auto bg-white rounded-lg shadow">
-        <table class="w-full text-sm text-left text-gray-500">
-          <thead>
-            <tr class="text-xs text-gray-700 uppercase bg-gray-50">
-              <th scope="col" class="px-6 py-3">Name</th>
-              <th scope="col" class="px-6 py-3">Skills</th>
-              <th scope="col" class="px-6 py-3 text-center">Match Score</th>
-              <th scope="col" class="px-6 py-3 text-center">Date</th>
-              <th scope="col" class="px-6 py-3 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody id="candidate-table-body">
-            <tr class="bg-white border-b">
-              <td colspan="5" class="px-6 py-4 text-center text-gray-500">No candidates yet</td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Candidate Cards Grid -->
+      <div id="candidate-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-in">
+        <!-- Candidate cards will be inserted here -->
       </div>
 
       <!-- Candidate Detail Modal -->
-      <div id="candidate-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div class="flex justify-between items-center mb-6 pb-4 border-b">
-            <h2 id="detail-name" class="text-2xl font-bold text-gray-800">Candidate Details</h2>
-            <button id="detail-close-btn" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+      <div id="candidate-detail-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+        <div class="glass-effect p-8 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slide-in">
+          <div class="flex justify-between items-center mb-6 pb-4 border-b-2 border-gray-200">
+            <h2 id="detail-name" class="text-3xl font-bold text-gray-800"></h2>
+            <button id="detail-close-btn" class="text-gray-500 hover:text-gray-800 text-3xl font-bold hover:scale-110 transition">&times;</button>
           </div>
+          
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
             <div>
-              <h3 class="text-lg font-semibold mb-3 text-gray-700">Skills</h3>
-              <div id="detail-skills" class="flex flex-wrap gap-2">
-                <!-- Skill badges will be inserted here -->
-              </div>
+              <h3 class="text-lg font-semibold mb-3 text-gray-700 flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                Skills
+              </h3>
+              <div id="detail-skills" class="flex flex-wrap gap-2"></div>
             </div>
             <div>
-              <h3 class="text-lg font-semibold mb-3 text-gray-700">Experience</h3>
-              <div id="detail-experience" class="prose prose-sm max-w-none">
-                <!-- Experience details will be inserted here -->
-              </div>
+              <h3 class="text-lg font-semibold mb-3 text-gray-700 flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Experience
+              </h3>
+              <div id="detail-experience" class="prose prose-sm max-w-none text-gray-700"></div>
             </div>
           </div>
+          
           <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-3 text-gray-700">Education</h3>
-            <div id="detail-education" class="prose prose-sm max-w-none">
-              <!-- Education details will be inserted here -->
-            </div>
+            <h3 class="text-lg font-semibold mb-3 text-gray-700 flex items-center gap-2">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Education
+            </h3>
+            <div id="detail-education" class="prose prose-sm max-w-none text-gray-700"></div>
           </div>
+          
           <div>
-            <h3 class="text-lg font-semibold mb-3 text-gray-700">Chat History</h3>
-            <div id="detail-chat-history" class="border p-4 max-h-60 overflow-y-auto bg-gray-50 rounded-md">
-              <!-- Chat history will be inserted here -->
-            </div>
+            <h3 class="text-lg font-semibold mb-3 text-gray-700 flex items-center gap-2">
+              <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              Chat History
+            </h3>
+            <div id="detail-chat-history" class="border border-gray-200 p-4 max-h-60 overflow-y-auto bg-gradient-to-b from-white to-gray-50 rounded-xl"></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-
-    /* Custom styles for active/inactive navigation buttons */
-    #candidate-view-btn.active {
-      background-color: #2563EB; /* blue-600 */
-    }
-    #candidate-view-btn.inactive {
-      background-color: #9CA3AF; /* gray-400 */
-    }
-    #recruiter-view-btn.active {
-      background-color: #7C3AED; /* purple-600 */
-    }
-    #recruiter-view-btn.inactive {
-      background-color: #9CA3AF; /* gray-400 */
-    }
-  </style>
   <script>
-    // Define the backend URL
-    // This should match your Render backend service URL (e.g., https://recruitr-backend.onrender.com)
     const BACKEND_URL = 'https://recruitr-backend.onrender.com';
 
-    // State Management
     const state = {
       view: localStorage.getItem('view') || 'candidate',
       isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
@@ -193,10 +367,10 @@
         { sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }
       ],
       extractedProfile: JSON.parse(localStorage.getItem('extractedProfile')) || null,
-      backendAvailable: true // Track backend availability
+      backendAvailable: true,
+      isTyping: false
     };
 
-    // DOM Elements
     const els = {
       backendStatusBanner: document.getElementById('backend-status-banner'),
       candidateViewBtn: document.getElementById('candidate-view-btn'),
@@ -209,7 +383,7 @@
       chatInput: document.getElementById('chat-input'),
       sendBtn: document.getElementById('send-btn'),
       clearChatBtn: document.getElementById('clear-chat-btn'),
-      candidateTableBody: document.getElementById('candidate-table-body'),
+      candidateGrid: document.getElementById('candidate-grid'),
       loadingIndicator: document.getElementById('loading-indicator'),
       loginModal: document.getElementById('login-modal'),
       loginSubmitBtn: document.getElementById('login-submit-btn'),
@@ -228,96 +402,134 @@
       detailCloseBtn: document.getElementById('detail-close-btn'),
       searchInput: document.getElementById('search-input'),
       sortSelect: document.getElementById('sort-select'),
-      applyFiltersBtn: document.getElementById('apply-filters-btn')
+      applyFiltersBtn: document.getElementById('apply-filters-btn'),
+      uploadZone: document.getElementById('upload-zone')
     };
 
-    // Show loading indicator
     function showLoading() {
       els.loadingIndicator.classList.remove('hidden');
     }
 
-    // Hide loading indicator
     function hideLoading() {
       els.loadingIndicator.classList.add('hidden');
     }
 
-    // Helper to add chat message
     function addChatMessage(sender, text) {
       state.chatMessages.push({ sender, text, timestamp: new Date() });
       localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
       renderChatMessages();
     }
 
-    // Render chat messages with improved styling
+    function showTypingIndicator() {
+      if (state.isTyping) return;
+      state.isTyping = true;
+      const typingDiv = document.createElement('div');
+      typingDiv.id = 'typing-indicator';
+      typingDiv.className = 'chat-message mb-4 p-4 bg-purple-50 rounded-lg shadow-sm typing-indicator';
+      typingDiv.innerHTML = `
+        <strong class="text-purple-700">Recruitr:</strong>
+        <span class="text-gray-600"> is typing</span>
+        <span class="inline-flex gap-1 ml-2">
+          <span class="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
+          <span class="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style="animation-delay: 0.2s"></span>
+          <span class="w-2 h-2 bg-purple-400 rounded-full animate-pulse" style="animation-delay: 0.4s"></span>
+        </span>
+      `;
+      els.chatBox.appendChild(typingDiv);
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+      state.isTyping = false;
+      const typingDiv = document.getElementById('typing-indicator');
+      if (typingDiv) typingDiv.remove();
+    }
+
     function renderChatMessages() {
       els.chatBox.innerHTML = '';
       state.chatMessages.forEach(msg => {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `mb-3 p-2 rounded-lg ${msg.sender === 'Recruitr' ? 'bg-blue-100' : 'bg-green-100 ml-8'}`;
-        messageDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+        const isUser = msg.sender === 'User';
+        messageDiv.className = `chat-message mb-4 p-4 rounded-lg shadow-sm ${
+          isUser ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white ml-8' : 'bg-purple-50 text-gray-800 mr-8'
+        }`;
+        messageDiv.innerHTML = `
+          <strong class="${isUser ? 'text-white' : 'text-purple-700'}">${msg.sender}:</strong>
+          <span class="${isUser ? 'text-white' : 'text-gray-800'}"> ${msg.text}</span>
+        `;
         els.chatBox.appendChild(messageDiv);
       });
       els.chatBox.scrollTop = els.chatBox.scrollHeight;
     }
 
-    // Render profile preview
     function renderProfilePreview(profileData) {
       if (!profileData) return;
 
       els.profilePreview.classList.remove('hidden');
       els.profileContent.innerHTML = '';
 
-      const nameDiv = document.createElement('div');
-      nameDiv.innerHTML = `
-        <h3 class="font-semibold">Name</h3>
-        <p>${profileData.candidateName || 'Unknown'}</p>
+      const nameCard = document.createElement('div');
+      nameCard.className = 'p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl';
+      nameCard.innerHTML = `
+        <h3 class="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Name
+        </h3>
+        <p class="text-xl font-bold text-gray-800">${profileData.candidateName || 'Unknown'}</p>
       `;
-      els.profileContent.appendChild(nameDiv);
+      els.profileContent.appendChild(nameCard);
 
-      const skillsDiv = document.createElement('div');
-      skillsDiv.innerHTML = `
-        <h3 class="font-semibold">Skills</h3>
-        <div class="flex flex-wrap gap-1 mt-1">
+      const skillsCard = document.createElement('div');
+      skillsCard.className = 'p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl';
+      skillsCard.innerHTML = `
+        <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+          Skills
+        </h3>
+        <div class="flex flex-wrap gap-2">
           ${profileData.skills.map(skill =>
-            `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
+            `<span class="skill-badge bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-sm px-3 py-1 rounded-full shadow-md">${skill}</span>`
           ).join('')}
         </div>
       `;
-      els.profileContent.appendChild(skillsDiv);
+      els.profileContent.appendChild(skillsCard);
 
       if (profileData.experience && profileData.experience.length > 0) {
-        const expDiv = document.createElement('div');
-        expDiv.innerHTML = `
-          <h3 class="font-semibold">Experience</h3>
-          <ul class="list-disc pl-5 mt-1">
-            ${profileData.experience.slice(0, 2).map(exp => `<li>${exp}</li>`).join('')}
-            ${profileData.experience.length > 2 ? '<li>...</li>' : ''}
+        const expCard = document.createElement('div');
+        expCard.className = 'p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl md:col-span-2';
+        expCard.innerHTML = `
+          <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Experience Highlights
+          </h3>
+          <ul class="space-y-2">
+            ${profileData.experience.slice(0, 3).map(exp => 
+              `<li class="text-gray-700 flex items-start gap-2">
+                <svg class="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                ${exp}
+              </li>`
+            ).join('')}
+            ${profileData.experience.length > 3 ? `<li class="text-gray-500 text-sm">+${profileData.experience.length - 3} more</li>` : ''}
           </ul>
         `;
-        els.profileContent.appendChild(expDiv);
-      }
-
-      if (profileData.education && profileData.education.length > 0) {
-        const eduDiv = document.createElement('div');
-        eduDiv.innerHTML = `
-          <h3 class="font-semibold">Education</h3>
-          <ul class="list-disc pl-5 mt-1">
-            ${profileData.education.slice(0, 2).map(edu => `<li>${edu}</li>`).join('')}
-            ${profileData.education.length > 2 ? '<li>...</li>' : ''}
-          </ul>
-        `;
-        els.profileContent.appendChild(eduDiv);
+        els.profileContent.appendChild(expCard);
       }
     }
 
-    // Clear chat
     els.clearChatBtn.addEventListener('click', () => {
       state.chatMessages = [{ sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
       localStorage.setItem('chatMessages', JSON.stringify(state.chatMessages));
       renderChatMessages();
     });
 
-    // Switch views with authentication check
     function switchView(view) {
       state.view = view;
       localStorage.setItem('view', state.view);
@@ -326,18 +538,17 @@
       els.candidateView.classList.toggle('hidden', !isCandidateView);
       els.recruiterView.classList.toggle('hidden', isCandidateView);
 
-      els.candidateViewBtn.classList.toggle('active', isCandidateView);
-      els.candidateViewBtn.classList.toggle('inactive', !isCandidateView);
-      els.recruiterViewBtn.classList.toggle('active', !isCandidateView);
-      els.recruiterViewBtn.classList.toggle('inactive', isCandidateView);
-
       if (isCandidateView) {
+        els.candidateViewBtn.className = 'px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md gradient-bg text-white';
+        els.recruiterViewBtn.className = 'px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md bg-gray-200 text-gray-700';
         renderChatMessages();
         if (state.extractedProfile) {
           renderProfilePreview(state.extractedProfile);
         }
       } else {
-        updateRecruiterTable();
+        els.candidateViewBtn.className = 'px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md bg-gray-200 text-gray-700';
+        els.recruiterViewBtn.className = 'px-6 py-2.5 rounded-lg font-medium transition hover-lift shadow-md gradient-bg text-white';
+        updateRecruiterDashboard();
       }
     }
 
@@ -351,7 +562,6 @@
       switchView('recruiter');
     });
 
-    // Login modal functionality
     els.loginCancelBtn.addEventListener('click', () => {
       els.loginModal.classList.add('hidden');
     });
@@ -392,7 +602,6 @@
       }
     });
 
-    // Logout functionality
     els.logoutBtn.addEventListener('click', async () => {
       showLoading();
       try {
@@ -402,7 +611,6 @@
         });
 
         if (response.ok) {
-          // Clear local state
           state.isLoggedIn = false;
           state.candidateId = null;
           state.candidateName = null;
@@ -410,7 +618,6 @@
           state.extractedProfile = null;
           state.chatMessages = [{ sender: 'Recruitr', text: 'Welcome to Recruitr! Please upload your resume to start.' }];
 
-          // Clear localStorage
           localStorage.removeItem('isLoggedIn');
           localStorage.removeItem('candidateId');
           localStorage.removeItem('candidateName');
@@ -418,7 +625,6 @@
           localStorage.removeItem('extractedProfile');
           localStorage.removeItem('chatMessages');
 
-          // Switch to candidate view
           switchView('candidate');
         } else {
           const data = await response.json();
@@ -432,53 +638,71 @@
       }
     });
 
-    // Handle resume upload with enhanced feedback and detailed error logging
-    els.resumeInput.addEventListener('change', async (e) => {
+    // Drag and drop functionality
+    els.uploadZone.addEventListener('dragover', (e) => {
       e.preventDefault();
-      const file = e.target.files[0];
+      els.uploadZone.classList.add('dragover');
+    });
+
+    els.uploadZone.addEventListener('dragleave', () => {
+      els.uploadZone.classList.remove('dragover');
+    });
+
+    els.uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      els.uploadZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        els.resumeInput.files = files;
+        handleResumeUpload(files[0]);
+      }
+    });
+
+    async function handleResumeUpload(file) {
       if (!file) {
         els.uploadStatus.textContent = 'No file selected.';
+        els.uploadStatus.className = 'text-sm mt-4 font-medium text-red-600';
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
         els.uploadStatus.textContent = 'File too large. Maximum size is 5MB.';
+        els.uploadStatus.className = 'text-sm mt-4 font-medium text-red-600';
         return;
       }
 
       const fileExt = file.name.split('.').pop().toLowerCase();
       if (fileExt !== 'pdf' && fileExt !== 'docx') {
         els.uploadStatus.textContent = 'Only PDF and DOCX files are allowed.';
+        els.uploadStatus.className = 'text-sm mt-4 font-medium text-red-600';
         return;
       }
 
       els.uploadStatus.textContent = 'Uploading...';
+      els.uploadStatus.className = 'text-sm mt-4 font-medium text-blue-600';
       showLoading();
 
       const formData = new FormData();
       formData.append('resume', file);
 
       try {
-        console.log('Sending resume upload request to server...');
         const response = await fetch(`${BACKEND_URL}/api/upload-resume`, {
           method: 'POST',
           body: formData,
           credentials: 'include'
         });
 
-        console.log('Response status:', response.status);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
         }
 
         const data = await response.json();
-        // The server now sends a more structured response on success
         const parsedData = data.parsedData;
 
-        if (data.message === 'Resume uploaded and parsed successfully') {
+        if (data.message === 'Resume uploaded successfully') {
           state.candidateId = data.candidateId;
-          state.candidateName = data.parsedData.candidateName || 'Candidate';
+          state.candidateName = parsedData.candidateName || 'Candidate';
           localStorage.setItem('candidateId', state.candidateId);
           localStorage.setItem('candidateName', state.candidateName);
 
@@ -486,14 +710,23 @@
           localStorage.setItem('extractedProfile', JSON.stringify(state.extractedProfile));
           renderProfilePreview(state.extractedProfile);
 
-          els.uploadStatus.textContent = 'Resume uploaded successfully!';
-          els.uploadStatus.className = 'text-sm text-green-600';
+          els.uploadStatus.innerHTML = `
+            <span class="flex items-center justify-center gap-2 text-green-600">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+              Resume uploaded successfully!
+            </span>
+          `;
+          els.uploadStatus.className = 'text-sm mt-4 font-medium text-green-600';
 
           addChatMessage('Recruitr', `Hello ${parsedData.candidateName || 'there'}! Thanks for uploading your resume.`);
 
           if (parsedData.skills.length > 0) {
-            addChatMessage('Recruitr', `I see you have experience with ${parsedData.skills.join(', ')}.`);
-            addChatMessage('Recruitr', `Could you tell me more about your experience with ${parsedData.skills[0]}?`);
+            addChatMessage('Recruitr', `I see you have experience with ${parsedData.skills.slice(0, 3).join(', ')}. That's impressive!`);
+            setTimeout(() => {
+              addChatMessage('Recruitr', `Could you tell me more about your experience with ${parsedData.skills[0]}?`);
+            }, 1000);
           } else {
             addChatMessage('Recruitr', 'Could you tell me about your most recent work experience?');
           }
@@ -508,23 +741,28 @@
 
           state.candidates.push(newCandidate);
           localStorage.setItem('candidates', JSON.stringify(state.candidates));
-          updateRecruiterTable();
         } else {
           els.uploadStatus.textContent = `Error: ${data.error || 'Failed to upload resume.'}`;
-          els.uploadStatus.className = 'text-sm text-red-600';
+          els.uploadStatus.className = 'text-sm mt-4 font-medium text-red-600';
           addChatMessage('Recruitr', `Sorry, I couldn't process that resume. Please try again.`);
         }
       } catch (error) {
         console.error('Fetch error details:', error);
         els.uploadStatus.textContent = `Error: ${error.message}`;
-        els.uploadStatus.className = 'text-sm text-red-600';
+        els.uploadStatus.className = 'text-sm mt-4 font-medium text-red-600';
         addChatMessage('Recruitr', `An error occurred: ${error.message}`);
       } finally {
         hideLoading();
       }
+    }
+
+    els.resumeInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleResumeUpload(file);
+      }
     });
 
-    // Handle chat message
     els.sendBtn.addEventListener('click', async () => {
       const message = els.chatInput.value.trim();
       if (!message) return;
@@ -537,7 +775,9 @@
       addChatMessage('User', message);
       els.chatInput.value = '';
 
+      showTypingIndicator();
       showLoading();
+      
       try {
         const response = await fetch(`${BACKEND_URL}/api/chat`, {
           method: 'POST',
@@ -547,12 +787,17 @@
 
         const data = await response.json();
 
+        hideTypingIndicator();
+
         if (response.ok) {
-          addChatMessage('Recruitr', data.response || 'I am not sure how to respond to that.');
+          setTimeout(() => {
+            addChatMessage('Recruitr', data.response || 'I am not sure how to respond to that.');
+          }, 500);
         } else {
           addChatMessage('Recruitr', `Sorry, I encountered an error: ${data.error || 'Failed to process message.'}`);
         }
       } catch (error) {
+        hideTypingIndicator();
         console.error('Chat fetch error:', error);
         addChatMessage('Recruitr', `Sorry, I couldn't connect to the server. Please try again later.`);
       } finally {
@@ -561,8 +806,7 @@
       }
     });
 
-    // Update recruiter table with filtering and sorting
-    function updateRecruiterTable() {
+    function updateRecruiterDashboard() {
       if (!state.isLoggedIn) return;
 
       const searchTerm = els.searchInput.value.toLowerCase();
@@ -579,73 +823,66 @@
 
       filteredCandidates.sort((a, b) => {
         switch(sortOption) {
-          case 'score-desc':
-            return b.score - a.score;
-          case 'score-asc':
-            return a.score - b.score;
-          case 'date-desc':
-            return new Date(b.date) - new Date(a.date);
-          case 'date-asc':
-            return new Date(a.date) - new Date(b.date);
-          default:
-            return b.score - a.score;
+          case 'score-desc': return b.score - a.score;
+          case 'score-asc': return a.score - b.score;
+          case 'date-desc': return new Date(b.date) - new Date(a.date);
+          case 'date-asc': return new Date(a.date) - new Date(b.date);
+          default: return b.score - a.score;
         }
       });
 
-      els.candidateTableBody.innerHTML = '';
+      els.candidateGrid.innerHTML = '';
 
       if (filteredCandidates.length === 0) {
-        els.candidateTableBody.innerHTML = `
-          <tr>
-            <td colspan="5" class="p-4 text-center text-gray-500">No candidates match your criteria</td>
-          </tr>
+        els.candidateGrid.innerHTML = `
+          <div class="col-span-full text-center py-12 glass-effect rounded-2xl">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <p class="text-gray-500 text-lg">No candidates match your criteria</p>
+          </div>
         `;
         return;
       }
 
       filteredCandidates.forEach(candidate => {
-        const row = document.createElement('tr');
-        row.className = 'border-t hover:bg-gray-50';
-
+        const card = document.createElement('div');
+        card.className = 'glass-effect p-6 rounded-2xl shadow-lg hover-lift cursor-pointer animate-fade-in';
+        
         const date = candidate.date ? new Date(candidate.date) : new Date();
-        const dateStr = date.toLocaleDateString();
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-        row.innerHTML = `
-          <td class="p-2">${candidate.name}</td>
-          <td class="p-2">
-            <div class="flex flex-wrap gap-1">
-              ${(candidate.skills || []).slice(0, 3).map(skill =>
-                `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${skill}</span>`
+        card.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <h3 class="text-xl font-bold text-gray-800 mb-1">${candidate.name}</h3>
+              <p class="text-sm text-gray-500">${dateStr}</p>
+            </div>
+            <div class="w-16 h-16 rounded-full gradient-bg flex items-center justify-center text-white font-bold text-xl shadow-lg">
+              ${candidate.score}%
+            </div>
+          </div>
+          
+          <div class="mb-4">
+            <p class="text-sm font-medium text-gray-600 mb-2">Top Skills:</p>
+            <div class="flex flex-wrap gap-2">
+              ${(candidate.skills || []).slice(0, 4).map(skill =>
+                `<span class="skill-badge bg-gradient-to-r from-purple-500 to-indigo-600 text-white text-xs px-3 py-1 rounded-full shadow-md">${skill}</span>`
               ).join('')}
-              ${(candidate.skills || []).length > 3 ? `<span class="text-xs">+${candidate.skills.length - 3} more</span>` : ''}
+              ${(candidate.skills || []).length > 4 ? `<span class="text-xs text-gray-500 self-center">+${candidate.skills.length - 4}</span>` : ''}
             </div>
-          </td>
-          <td class="p-2 text-center">
-            <div class="inline-flex items-center">
-              <div class="w-12 bg-gray-200 rounded-full h-2 mr-2">
-                <div class="bg-blue-600 h-2 rounded-full" style="width: ${candidate.score}%"></div>
-              </div>
-              <span>${candidate.score}%</span>
-            </div>
-          </td>
-          <td class="p-2 text-center">${dateStr}</td>
-          <td class="p-2 text-center">
-            <button class="view-details-btn bg-blue-500 text-white py-1 px-2 rounded text-sm"
-                    data-id="${candidate.id}">View Details</button>
-          </td>
+          </div>
+          
+          <button class="w-full gradient-bg text-white py-2 px-4 rounded-lg font-medium hover:opacity-90 transition shadow-md">
+            View Details
+          </button>
         `;
-        els.candidateTableBody.appendChild(row);
-      });
-
-      document.querySelectorAll('.view-details-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const candidateId = btn.getAttribute('data-id');
-          await showCandidateDetails(candidateId);
-        });
+        
+        card.addEventListener('click', () => showCandidateDetails(candidate.id));
+        els.candidateGrid.appendChild(card);
       });
     }
 
-    // Show candidate details
     async function showCandidateDetails(candidateId) {
       showLoading();
       try {
@@ -666,7 +903,7 @@
         els.detailSkills.innerHTML = '';
         (candidate.parsedData.skills || []).forEach(skill => {
           const skillBadge = document.createElement('span');
-          skillBadge.className = 'bg-blue-100 text-blue-800 px-2 py-1 rounded';
+          skillBadge.className = 'skill-badge bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1 rounded-full shadow-md';
           skillBadge.textContent = skill;
           els.detailSkills.appendChild(skillBadge);
         });
@@ -674,10 +911,16 @@
         els.detailExperience.innerHTML = '';
         if (candidate.parsedData.experience && candidate.parsedData.experience.length > 0) {
           const expList = document.createElement('ul');
-          expList.className = 'list-disc pl-5';
+          expList.className = 'space-y-2';
           candidate.parsedData.experience.forEach(exp => {
             const li = document.createElement('li');
-            li.textContent = exp;
+            li.className = 'flex items-start gap-2';
+            li.innerHTML = `
+              <svg class="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+              </svg>
+              <span>${exp}</span>
+            `;
             expList.appendChild(li);
           });
           els.detailExperience.appendChild(expList);
@@ -688,10 +931,16 @@
         els.detailEducation.innerHTML = '';
         if (candidate.parsedData.education && candidate.parsedData.education.length > 0) {
           const eduList = document.createElement('ul');
-          eduList.className = 'list-disc pl-5';
+          eduList.className = 'space-y-2';
           candidate.parsedData.education.forEach(edu => {
             const li = document.createElement('li');
-            li.textContent = edu;
+            li.className = 'flex items-start gap-2';
+            li.innerHTML = `
+              <svg class="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+              </svg>
+              <span>${edu}</span>
+            `;
             eduList.appendChild(li);
           });
           els.detailEducation.appendChild(eduList);
@@ -703,8 +952,11 @@
         if (candidate.chatHistory && candidate.chatHistory.length > 0) {
           candidate.chatHistory.forEach(msg => {
             const msgDiv = document.createElement('div');
-            msgDiv.className = `mb-2 p-2 rounded ${msg.sender === 'Recruitr' ? 'bg-blue-100' : 'bg-green-100 ml-4'}`;
-            msgDiv.innerHTML = `<strong>${msg.sender}:</strong> ${msg.text}`;
+            const isUser = msg.sender === 'User';
+            msgDiv.className = `mb-3 p-3 rounded-lg shadow-sm ${
+              isUser ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white ml-4' : 'bg-purple-50 text-gray-800 mr-4'
+            }`;
+            msgDiv.innerHTML = `<strong class="${isUser ? 'text-white' : 'text-purple-700'}">${msg.sender}:</strong> <span>${msg.text}</span>`;
             els.detailChatHistory.appendChild(msgDiv);
           });
         } else {
@@ -721,17 +973,14 @@
       }
     }
 
-    // Close candidate detail modal
     els.detailCloseBtn.addEventListener('click', () => {
       els.candidateDetailModal.classList.add('hidden');
     });
 
-    // Apply filters button
     els.applyFiltersBtn.addEventListener('click', () => {
-      updateRecruiterTable();
+      updateRecruiterDashboard();
     });
 
-    // Enter key in chat input
     els.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -739,7 +988,6 @@
       }
     });
 
-    // Enter key in search input
     els.searchInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -747,7 +995,6 @@
       }
     });
 
-    // Check backend availability
     async function checkBackendAvailability() {
       try {
         const response = await fetch(`${BACKEND_URL}/health`, {
@@ -768,7 +1015,6 @@
       }
     }
 
-    // Initial setup
     (function init() {
       checkBackendAvailability().then(() => {
         if (state.isLoggedIn) {
